@@ -27,11 +27,5 @@
       "Bash(git add docs/**)",
       "Bash(node packages/mp-mcp/dist/stdio.js)"
     ]
-  },
-  "mcpServers": {
-    "mp-mcp-local": {
-      "command": "node",
-      "args": ["./packages/mp-mcp/dist/stdio.js"]
-    }
   }
 }

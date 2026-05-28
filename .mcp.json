@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mp-mcp-local": {
+      "command": "node",
+      "args": ["./packages/mp-mcp/dist/stdio.js"]
+    }
+  }
+}

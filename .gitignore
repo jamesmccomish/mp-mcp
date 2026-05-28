@@ -6,8 +6,6 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
-.tshy/
-.tshy-build/
 
 # Test output
 coverage/

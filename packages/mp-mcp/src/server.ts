@@ -1,9 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { PACKAGE_NAME } from './config.js';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './config.js';
 import { registerPrompts } from './prompts/index.js';
 import { registerTools } from './tools/index.js';
 
-export const SERVER_VERSION = '0.0.0';
+export const SERVER_VERSION = PACKAGE_VERSION;
 
 const SERVER_INSTRUCTIONS = `\
 This MCP exposes UK Parliament data through intent-led tools.
@@ -20,7 +20,7 @@ information licensed under the Open Parliament Licence v3.0."
 
 export function createServer(): McpServer {
   const server = new McpServer(
-    { name: PACKAGE_NAME, version: SERVER_VERSION },
+    { name: PACKAGE_NAME, version: PACKAGE_VERSION },
     { instructions: SERVER_INSTRUCTIONS },
   );
   registerTools(server);

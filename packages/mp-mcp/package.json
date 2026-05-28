@@ -42,7 +42,9 @@
   },
   "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && chmod +x dist/stdio.js",
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p evals/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",

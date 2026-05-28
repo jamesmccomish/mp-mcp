@@ -1,8 +1,7 @@
 import { Agent, setGlobalDispatcher, fetch as undiciFetch } from 'undici';
-import { PACKAGE_NAME, REPO_URL, loadConfig } from '../config.js';
+import { PACKAGE_NAME, PACKAGE_VERSION, REPO_URL, loadConfig } from '../config.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
-import { SERVER_VERSION } from '../server.js';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 3;
@@ -17,7 +16,7 @@ const sharedAgent = new Agent({
 setGlobalDispatcher(sharedAgent);
 
 const config = loadConfig();
-const baseUserAgent = `${PACKAGE_NAME}/${SERVER_VERSION} (+${REPO_URL})`;
+const baseUserAgent = `${PACKAGE_NAME}/${PACKAGE_VERSION} (+${REPO_URL})`;
 const userAgent = config.userAgentSuffix
   ? `${baseUserAgent} ${config.userAgentSuffix}`
   : baseUserAgent;

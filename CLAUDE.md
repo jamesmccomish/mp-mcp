@@ -12,7 +12,7 @@ A demo app will eventually live in `apps/`; it is stubbed for now and out of sco
 
 ## Current milestone
 
-**M0 — Scaffold.** Bump this line when a milestone closes.
+**M7 — Eval suite scaffold.** M0–M7 closed; M8 (publish prep) is next. Bump this line when a milestone closes.
 
 ## Conventions (non-negotiable)
 

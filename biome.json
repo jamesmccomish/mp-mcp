@@ -7,15 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": [
-      "**/dist/**",
-      "**/.tshy/**",
-      "**/.tshy-build/**",
-      "**/node_modules/**",
-      "**/generated/**",
-      "**/coverage/**",
-      "**/*.md"
-    ]
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/generated/**", "**/coverage/**", "**/*.md"]
   },
   "organizeImports": {
     "enabled": true
