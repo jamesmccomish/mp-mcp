@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { PACKAGE_NAME } from './config.js';
+import { registerPrompts } from './prompts/index.js';
 import { registerTools } from './tools/index.js';
 
 export const SERVER_VERSION = '0.0.0';
@@ -23,5 +24,6 @@ export function createServer(): McpServer {
     { instructions: SERVER_INSTRUCTIONS },
   );
   registerTools(server);
+  registerPrompts(server);
   return server;
 }

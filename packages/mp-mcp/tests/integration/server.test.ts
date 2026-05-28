@@ -44,6 +44,46 @@ describe('mp-mcp server (in-memory)', () => {
     );
   });
 
+  it('registers all 10 firm tools', async () => {
+    const { tools } = await client.listTools();
+    const names = tools.map((t) => t.name).sort();
+    expect(names).toEqual(
+      [
+        'parliament_find_constituency',
+        'parliament_find_member',
+        'parliament_get_committee',
+        'parliament_get_debate',
+        'parliament_get_division',
+        'parliament_member_interests',
+        'parliament_member_overview',
+        'parliament_member_voting_history',
+        'parliament_ping',
+        'parliament_search_hansard',
+        'parliament_topic_tracker',
+      ].sort(),
+    );
+  });
+
+  it('registers all four prompts and renders their text on request', async () => {
+    const { prompts } = await client.listPrompts();
+    const promptNames = prompts.map((p) => p.name).sort();
+    expect(promptNames).toEqual([
+      'draft-constituent-letter',
+      'mp-report-card',
+      'topic-tracker',
+      'vote-explainer',
+    ]);
+
+    const result = await client.getPrompt({
+      name: 'mp-report-card',
+      arguments: { postcode_or_name: 'SW1A 0AA' },
+    });
+    const first = result.messages[0];
+    expect(first?.role).toBe('user');
+    expect((first?.content as { text: string }).text).toContain('parliament_find_member');
+    expect((first?.content as { text: string }).text).toContain('SW1A 0AA');
+  });
+
   it('returns the canned response for parliament_ping', async () => {
     const result = await client.callTool({ name: 'parliament_ping', arguments: {} });
     const content = result.content as Array<{ type: string; text: string }>;
