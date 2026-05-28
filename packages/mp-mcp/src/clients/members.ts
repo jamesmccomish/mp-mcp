@@ -90,4 +90,106 @@ export async function getMember(id: number): Promise<RawMember> {
   return envelope.value;
 }
 
+export type RawSynopsis = string;
+
+export async function getSynopsis(id: number): Promise<RawSynopsis> {
+  const envelope = await getJson<{ value: string }>(`${BASE}/Members/${id}/Synopsis`);
+  return envelope.value;
+}
+
+export type RawFocus = Array<{ category: string; focus: string[] }>;
+
+export async function getFocus(id: number): Promise<RawFocus> {
+  const envelope = await getJson<{ value: RawFocus }>(`${BASE}/Members/${id}/Focus`);
+  return envelope.value;
+}
+
+export type RawContact = {
+  type: string | null;
+  typeDescription: string | null;
+  line1: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+};
+
+export async function getContact(id: number): Promise<RawContact[]> {
+  const envelope = await getJson<{ value: RawContact[] }>(`${BASE}/Members/${id}/Contact`);
+  return envelope.value ?? [];
+}
+
+export type RawVotingItem = {
+  house: HouseId;
+  id: number;
+  title: string;
+  date: string;
+  divisionNumber: number;
+  inAffirmativeLobby: boolean;
+  inNegativeLobby: boolean;
+  actedAsTeller: boolean;
+  numberInFavour: number;
+  numberAgainst: number;
+};
+
+export type MemberVotingParams = {
+  house?: HouseId;
+  take?: number;
+  skip?: number;
+};
+
+export async function getVoting(
+  id: number,
+  params: MemberVotingParams = {},
+): Promise<RawVotingItem[]> {
+  const envelope = await getJson<SearchEnvelope<RawVotingItem>>(`${BASE}/Members/${id}/Voting`, {
+    query: {
+      house: params.house ?? 1,
+      take: params.take ?? 20,
+      skip: params.skip ?? 0,
+    },
+  });
+  return (envelope.items ?? []).map((it) => it.value);
+}
+
+export type RawContributionSummaryItem = {
+  totalContributions: number;
+  debateTitle: string;
+  debateId: number;
+  debateWebsiteId: string;
+  sittingDate: string;
+  section: string;
+  house: 'Commons' | 'Lords';
+};
+
+export async function getContributionSummary(
+  id: number,
+  take = 10,
+): Promise<RawContributionSummaryItem[]> {
+  const envelope = await getJson<SearchEnvelope<RawContributionSummaryItem>>(
+    `${BASE}/Members/${id}/ContributionSummary`,
+    { query: { take } },
+  );
+  return (envelope.items ?? []).map((it) => it.value);
+}
+
+export type RawRegisteredInterestEntry = {
+  id: number;
+  interest: string;
+  registrationDate: string | null;
+  publishedDate: string | null;
+};
+
+export type RawRegisteredInterestCategory = {
+  id: number;
+  name: string;
+  interests: RawRegisteredInterestEntry[];
+};
+
+export async function getRegisteredInterests(id: number): Promise<RawRegisteredInterestCategory[]> {
+  const envelope = await getJson<{
+    value: { interestCategories?: RawRegisteredInterestCategory[] };
+  }>(`${BASE}/Members/${id}/RegisteredInterests`);
+  return envelope.value.interestCategories ?? [];
+}
+
 export const __testing__ = { BASE };

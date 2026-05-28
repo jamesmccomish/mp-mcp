@@ -2,7 +2,11 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerTool } from '../lib/registerTool.js';
 import { findConstituencyToolDefinition } from './findConstituency.js';
 import { findMemberToolDefinition } from './findMember.js';
+import { getDebateToolDefinition } from './getDebate.js';
+import { memberOverviewToolDefinition } from './memberOverview.js';
+import { memberVotingHistoryToolDefinition } from './memberVotingHistory.js';
 import { pingToolDefinition } from './ping.js';
+import { searchHansardToolDefinition } from './searchHansard.js';
 
 export function registerTools(server: McpServer): void {
   server.tool(
@@ -17,4 +21,8 @@ export function registerTools(server: McpServer): void {
 
   registerTool(server, findMemberToolDefinition);
   registerTool(server, findConstituencyToolDefinition);
+  registerTool(server, memberOverviewToolDefinition);
+  registerTool(server, memberVotingHistoryToolDefinition);
+  registerTool(server, searchHansardToolDefinition);
+  registerTool(server, getDebateToolDefinition);
 }
