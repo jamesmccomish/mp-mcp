@@ -1,0 +1,22 @@
+# mp-mcp — pointers for LLM coding agents
+
+This file is read first by tools like Claude Code. It points at the canonical
+sources of project context. Do not re-derive the conventions below from the
+codebase — read these files.
+
+## Required reading
+
+- [CLAUDE.md](CLAUDE.md) — project memory: mission, current milestone, conventions
+
+## Project tooling
+
+- [.claude/README.md](.claude/README.md) — what's in `.claude/` and why
+- [.claude/commands/new-tool.md](.claude/commands/new-tool.md) — scaffold a tool
+- [.claude/commands/new-adr.md](.claude/commands/new-adr.md) — record a decision
+- [.claude/agents/tool-description-reviewer.md](.claude/agents/tool-description-reviewer.md) — critique tool descriptions
+
+## Citation contract
+
+Every tool response includes a `sources` array of parliament.uk URLs. Every
+user-facing factual claim must cite them inline. This is enforced in the tool
+descriptions and the server's `instructions` field.

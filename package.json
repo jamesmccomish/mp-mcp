@@ -1,0 +1,42 @@
+{
+  "name": "mp-mcp-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Monorepo for mp-mcp (UK Parliament MCP server) and its consumer apps.",
+  "author": "James McComish (https://github.com/jamesmccomish)",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "parliament",
+    "uk-parliament",
+    "hansard",
+    "civic-tech"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "build": "pnpm -r --filter=./packages/* build",
+    "typecheck": "pnpm -r --filter=./packages/* typecheck",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "pnpm -r --filter=./packages/* test",
+    "gen:types": "pnpm --filter mp-mcp gen:types",
+    "eval": "pnpm --filter mp-mcp eval",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.27.10",
+    "typescript": "^5.6.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"]
+  }
+}

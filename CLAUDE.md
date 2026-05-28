@@ -1,10 +1,8 @@
-# Project Memory — mp-mcp
-
-Repo-root memory for Claude Code working in this codebase. Read this first.
+# mp-mcp
 
 ## Mission
 
-Build `mp-mcp`, a public, npm-publishable MCP server for UK Parliament data. Showcase Anthropic's most current engineering guidance on agentic tool design — consolidated, citation-first, response-format-toggled.
+Build `mp-mcp`, a public, npm-publishable MCP server for UK Parliament data. 
 
 A demo app will eventually live in `apps/`; it is stubbed for now and out of scope for this build.
 
@@ -27,7 +25,7 @@ A demo app will eventually live in `apps/`; it is stubbed for now and out of sco
 ## Stack (locked — full rationale in `implementation-plan.md` §1)
 
 - pnpm workspaces; TypeScript 5.6+ strict; Node 22 published target; Bun supported as a dev runtime (CI matrix verifies both)
-- `@modelcontextprotocol/sdk`, Zod (schema), openapi-typescript (codegen), pino (logging), tshy (bundler)
+- `@modelcontextprotocol/sdk`, Zod (schema), openapi-typescript (codegen), pino (logging), `tsc` (build — ESM-only, Node 22+ target)
 - Biome (lint/format), Vitest (test), knip (dead code), publint + `@arethetypeswrong/cli` (publish-shape)
 - Changesets (versioning), GitHub Actions (CI)
 - MIT license for the code; Parliament data is under the **Open Parliament Licence v3.0** — attribution mandatory in the server `instructions` field and the README
