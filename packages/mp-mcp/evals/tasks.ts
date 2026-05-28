@@ -1,0 +1,259 @@
+/**
+ * 20 seed tasks for the mp-mcp eval suite. Tasks are grouped by category:
+ *
+ *   A. Postcode → MP report card (5)
+ *   B. Topic-filtered voting (5)
+ *   C. Topic tracking (5)
+ *   D. Trap prompts the agent should NOT call the MCP for (5)
+ *
+ * Verifiers return { pass, notes } for each run. Keep them deterministic
+ * (substring checks, tool-name presence) so the eval report reflects the
+ * MCP's quality, not the verifier's. LLM-as-judge tasks are marked
+ * `judge: true` and require ANTHROPIC_API_KEY to grade.
+ */
+
+export type EvalCategory = 'postcode-report' | 'voting' | 'topic' | 'trap';
+
+export type EvalTask = {
+  id: string;
+  category: EvalCategory;
+  prompt: string;
+  expected_tools?: string[];
+  forbidden_tools?: string[];
+  must_include?: string[];
+  must_not_include?: string[];
+  judge?: { criteria: string };
+};
+
+export const TASKS: EvalTask[] = [
+  // ── Category A: postcode → MP report card ──────────────────────────────────
+  {
+    id: 'A1',
+    category: 'postcode-report',
+    prompt: 'Who is the MP for SW1A 0AA and what is their voting record like?',
+    expected_tools: ['parliament_find_member'],
+    must_include: ['parliament.uk'],
+    judge: {
+      criteria:
+        "The response identifies the current MP for the postcode (the Speaker's seat MP), describes their voting record at least at a high level, and cites at least one parliament.uk URL.",
+    },
+  },
+  {
+    id: 'A2',
+    category: 'postcode-report',
+    prompt: 'Tell me about my MP, my postcode is BS3 4QH.',
+    expected_tools: ['parliament_find_member'],
+    must_include: ['parliament.uk'],
+    judge: {
+      criteria:
+        'The response names the constituency for BS3 4QH (Bristol South), names the current MP, and gives at least one citation.',
+    },
+  },
+  {
+    id: 'A3',
+    category: 'postcode-report',
+    prompt: 'What does my MP do on committees? My postcode is M14 5SH.',
+    expected_tools: ['parliament_find_member', 'parliament_member_overview'],
+    must_include: ['committee'],
+    judge: {
+      criteria:
+        'The response identifies the MP for M14 5SH and names at least one of their current committees with citation.',
+    },
+  },
+  {
+    id: 'A4',
+    category: 'postcode-report',
+    prompt: "I'm in EH8 9NX. Has my MP ever spoken about housing?",
+    expected_tools: ['parliament_find_member', 'parliament_search_hansard'],
+    must_include: ['hansard.parliament.uk'],
+    judge: {
+      criteria:
+        'The response identifies the MP for EH8 9NX, references at least one Hansard contribution by them on housing, and cites a hansard.parliament.uk URL.',
+    },
+  },
+  {
+    id: 'A5',
+    category: 'postcode-report',
+    prompt: "Show me Stephen Flynn's recent activity.",
+    expected_tools: ['parliament_find_member', 'parliament_member_overview'],
+    judge: {
+      criteria:
+        'The response identifies Stephen Flynn (Aberdeen South), summarises recent activity (votes/debates), and cites parliament.uk URLs.',
+    },
+  },
+
+  // ── Category B: topic-filtered voting ──────────────────────────────────────
+  {
+    id: 'B1',
+    category: 'voting',
+    prompt: 'How has the MP for Holborn and St Pancras voted on climate?',
+    expected_tools: ['parliament_find_member', 'parliament_member_voting_history'],
+    forbidden_tools: ['parliament_search_hansard'],
+    judge: {
+      criteria:
+        'Uses voting_history (not search_hansard) to list actual divisions on climate, with party-line context where available, citing votes.parliament.uk URLs.',
+    },
+  },
+  {
+    id: 'B2',
+    category: 'voting',
+    prompt: "Did Diane Abbott vote for the Renters' Rights Bill?",
+    expected_tools: ['parliament_find_member', 'parliament_member_voting_history'],
+    judge: {
+      criteria:
+        'Names Diane Abbott (Hackney North), reports a clear aye/no/abstain on a Renters Rights division, and cites the division URL.',
+    },
+  },
+  {
+    id: 'B3',
+    category: 'voting',
+    prompt: 'How did Conservatives vote on the latest tax measure?',
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Identifies a recent tax-related division, reports the Conservative aye/no breakdown, and cites votes.parliament.uk.',
+    },
+  },
+  {
+    id: 'B4',
+    category: 'voting',
+    prompt: 'Find votes about AI in the last year.',
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Returns at least one AI-related division from the last 12 months with citation, or honestly reports none if the upstream is genuinely empty.',
+    },
+  },
+  {
+    id: 'B5',
+    category: 'voting',
+    prompt: 'Has Keir Starmer ever voted against his own party?',
+    expected_tools: ['parliament_find_member', 'parliament_member_voting_history'],
+    judge: {
+      criteria:
+        'Names Starmer (Holborn and St Pancras), reports either a specific cross-party vote with citation OR honestly states no such votes were found in the data accessed.',
+    },
+  },
+
+  // ── Category C: topic tracking ─────────────────────────────────────────────
+  {
+    id: 'C1',
+    category: 'topic',
+    prompt: 'What is Parliament doing about NHS waiting lists?',
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Returns a digest covering bills, recent debates, recent votes, and written questions on NHS waiting lists, with citations.',
+    },
+  },
+  {
+    id: 'C2',
+    category: 'topic',
+    prompt: 'Tell me about the AI Bill.',
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Identifies any AI-related bill currently in progress (or honestly reports none), names current stage, cites bills.parliament.uk.',
+    },
+  },
+  {
+    id: 'C3',
+    category: 'topic',
+    prompt: "What's happening with the renters' rights bill?",
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Identifies the Renters Rights Bill (or Act if passed), reports current stage, and cites bills.parliament.uk.',
+    },
+  },
+  {
+    id: 'C4',
+    category: 'topic',
+    prompt: 'Recent debates about Ukraine.',
+    expected_tools: ['parliament_search_hansard'],
+    must_include: ['hansard.parliament.uk'],
+    judge: {
+      criteria:
+        'Returns recent Hansard debates mentioning Ukraine with short excerpts (< 400 chars) and hansard.parliament.uk URLs.',
+    },
+  },
+  {
+    id: 'C5',
+    category: 'topic',
+    prompt: 'Climate-related written questions this month.',
+    expected_tools: ['parliament_topic_tracker'],
+    judge: {
+      criteria:
+        'Returns recent climate written questions from the current month with citations, or honestly says none were tabled if the data is genuinely empty.',
+    },
+  },
+
+  // ── Category D: trap prompts ───────────────────────────────────────────────
+  {
+    id: 'D1',
+    category: 'trap',
+    prompt: 'What is the House of Commons?',
+    forbidden_tools: [
+      'parliament_find_member',
+      'parliament_member_overview',
+      'parliament_topic_tracker',
+      'parliament_search_hansard',
+      'parliament_get_debate',
+      'parliament_get_division',
+      'parliament_member_voting_history',
+      'parliament_member_interests',
+      'parliament_get_committee',
+    ],
+    judge: {
+      criteria:
+        'Answers from training; does NOT call the MCP, or makes at most one unnecessary call.',
+    },
+  },
+  {
+    id: 'D2',
+    category: 'trap',
+    prompt: "What's the difference between an MP and a Lord?",
+    forbidden_tools: [
+      'parliament_find_member',
+      'parliament_member_overview',
+      'parliament_topic_tracker',
+      'parliament_search_hansard',
+    ],
+    judge: { criteria: 'Definitional answer from training; no MCP tool calls needed.' },
+  },
+  {
+    id: 'D3',
+    category: 'trap',
+    prompt: 'How does first-past-the-post work?',
+    forbidden_tools: [
+      'parliament_find_member',
+      'parliament_member_overview',
+      'parliament_topic_tracker',
+      'parliament_search_hansard',
+    ],
+    judge: { criteria: 'Explanatory answer from training; no MCP tool calls.' },
+  },
+  {
+    id: 'D4',
+    category: 'trap',
+    prompt: 'What time does Parliament sit?',
+    judge: {
+      criteria:
+        'Either answers from training, or if it does call the MCP, the response includes a citation to a parliament.uk source.',
+    },
+  },
+  {
+    id: 'D5',
+    category: 'trap',
+    prompt: 'Who is the current Prime Minister?',
+    forbidden_tools: [
+      'parliament_find_member',
+      'parliament_member_overview',
+      'parliament_member_voting_history',
+    ],
+    judge: {
+      criteria:
+        'Names the current PM from training/web search. Should not call parliament_find_member (this MCP has no current-PM tool).',
+    },
+  },
+];
