@@ -36,6 +36,14 @@ describe('mp-mcp server (in-memory)', () => {
     expect(names).toContain('parliament_ping');
   });
 
+  it('registers Tier 1 tools with intent-led names', async () => {
+    const { tools } = await client.listTools();
+    const names = tools.map((t) => t.name);
+    expect(names).toEqual(
+      expect.arrayContaining(['parliament_find_member', 'parliament_find_constituency']),
+    );
+  });
+
   it('returns the canned response for parliament_ping', async () => {
     const result = await client.callTool({ name: 'parliament_ping', arguments: {} });
     const content = result.content as Array<{ type: string; text: string }>;
