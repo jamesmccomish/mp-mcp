@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm i)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm lint:fix)",
+      "Bash(pnpm format)",
+      "Bash(pnpm build)",
+      "Bash(pnpm gen:types)",
+      "Bash(pnpm eval)",
+      "Bash(pnpm changeset)",
+      "Bash(pnpm changeset:*)",
+      "Bash(pnpm dlx *)",
+      "Bash(git status)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log)",
+      "Bash(git log:*)",
+      "Bash(git add :/)",
+      "Bash(git add packages/**)",
+      "Bash(git add apps/**)",
+      "Bash(git add docs/**)",
+      "Bash(node packages/mp-mcp/dist/stdio.js)"
+    ]
+  },
+  "mcpServers": {
+    "mp-mcp-local": {
+      "command": "node",
+      "args": ["./packages/mp-mcp/dist/stdio.js"]
+    }
+  }
+}

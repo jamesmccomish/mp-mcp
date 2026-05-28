@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test output
+coverage/
+.vitest/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Cache
+.cache/
+.turbo/
+.parcel-cache/
+
+# Local
+.tmp/
+tmp/
+fixtures/recorded/
+
+# Eval reports (generated; keep README and tasks)
+packages/mp-mcp/evals/reports/*
+!packages/mp-mcp/evals/reports/.gitkeep
