@@ -34,7 +34,7 @@ describe('memberVotingHistory', () => {
       member_id: 172,
       assembly: 'commons',
       limit: 5,
-      response_format: 'concise',
+      response_format: 'detailed',
     });
 
     expect(result.data.votes).toMatchInlineSnapshot(`
@@ -116,5 +116,26 @@ describe('memberVotingHistory', () => {
       response_format: 'concise',
     });
     expect(result.data.votes.every((v) => v.date >= '2025-01-01')).toBe(true);
+  });
+
+  it('drops chaining fields in concise but keeps them in detailed', async () => {
+    stubVoting(172, [VOTING_PAGE]);
+    const concise = await memberVotingHistory({
+      member_id: 172,
+      assembly: 'commons',
+      limit: 5,
+      response_format: 'concise',
+    });
+    expect(concise.data.votes[0]).not.toHaveProperty('division_id');
+    expect(concise.data.votes[0]).toHaveProperty('vote');
+
+    stubVoting(172, [VOTING_PAGE]);
+    const detailed = await memberVotingHistory({
+      member_id: 172,
+      assembly: 'commons',
+      limit: 5,
+      response_format: 'detailed',
+    });
+    expect(detailed.data.votes[0]).toHaveProperty('division_id');
   });
 });

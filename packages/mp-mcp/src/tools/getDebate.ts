@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { type HansardDebateDetail, getDebateByExtId } from '../clients/hansard.js';
 import type { Citation, ToolResponse } from '../domain/citation.js';
-import type { DebateDetail } from '../domain/debate.js';
+import type { DebateContribution, DebateDetail } from '../domain/debate.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
@@ -26,7 +26,10 @@ export const GetDebateInputSchema = z.object({
 
 export type GetDebateInput = z.infer<typeof GetDebateInputSchema>;
 
-export type GetDebateData = DebateDetail & {
+type DebateContributionConcise = Pick<DebateContribution, 'attributed_to' | 'text'>;
+
+export type GetDebateData = Omit<DebateDetail, 'contributions'> & {
+  contributions: DebateContribution[] | DebateContributionConcise[];
   truncated: boolean;
   total_items: number;
 };
@@ -57,6 +60,11 @@ export async function getDebate(input: GetDebateInput): Promise<ToolResponse<Get
   const flattened = flatten(detail);
   const { contributions, truncated } = truncateByBudget(flattened);
 
+  const projected: DebateContribution[] | DebateContributionConcise[] =
+    input.response_format === 'detailed'
+      ? contributions
+      : contributions.map((c) => ({ attributed_to: c.attributed_to, text: c.text }));
+
   const data: GetDebateData = {
     ext_id: detail.Overview.ExtId,
     title: detail.Overview.Title,
@@ -76,7 +84,7 @@ export async function getDebate(input: GetDebateInput): Promise<ToolResponse<Get
           title: detail.Overview.NextDebateTitle ?? '',
         }
       : null,
-    contributions,
+    contributions: projected,
     truncated,
     total_items: flattened.length,
   };
@@ -155,9 +163,10 @@ export const getDebateToolDefinition = {
     '',
     'Wrong for: searching across debates by keyword (use parliament_search_hansard); a specific division within the debate (use parliament_get_division).',
     '',
-    'Inputs: one of debate_ext_id (GUID) or hansard_url (full hansard.parliament.uk link), response_format (concise|detailed, default concise).',
+    "Inputs: one of debate_ext_id (GUID) or hansard_url (full hansard.parliament.uk link), response_format (concise|detailed; detailed adds each contribution's member_id and Hansard item type).",
     '',
     'This response includes a `sources` array of hansard.parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetDebateInputSchema,
   handler: getDebate,

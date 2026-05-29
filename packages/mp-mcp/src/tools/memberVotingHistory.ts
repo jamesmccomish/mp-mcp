@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { type HouseId, type RawVotingItem, getVoting } from '../clients/members.js';
-import type { Citation, ToolResponse } from '../domain/citation.js';
+import type { ToolResponse } from '../domain/citation.js';
 import type { MemberVote } from '../domain/vote.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
@@ -39,9 +40,11 @@ export const MemberVotingHistoryInputSchema = z.object({
 
 export type MemberVotingHistoryInput = z.infer<typeof MemberVotingHistoryInputSchema>;
 
+export type MemberVoteConcise = Pick<MemberVote, 'house' | 'title' | 'date' | 'vote' | 'passed'>;
+
 export type MemberVotingHistoryData = {
   member_id: number;
-  votes: MemberVote[];
+  votes: MemberVote[] | MemberVoteConcise[];
   filter: {
     topic: string | null;
     from_date: string | null;
@@ -75,11 +78,13 @@ export async function memberVotingHistory(
     );
   }
 
-  const votes = filtered.slice(0, input.limit).map(mapVoteFromRaw);
+  const fullVotes = filtered.slice(0, input.limit).map(mapVoteFromRaw);
 
-  const sources: Citation[] = votes
-    .slice(0, 5)
-    .map((v) => Citations.division(v.house, v.division_id, v.title));
+  const sources = collectSources(fullVotes, (v) =>
+    Citations.division(v.house, v.division_id, v.title),
+  );
+
+  const votes = input.response_format === 'detailed' ? fullVotes : fullVotes.map(conciseVote);
 
   return buildResponse(
     {
@@ -95,6 +100,10 @@ export async function memberVotingHistory(
     sources,
     { upstream_calls: Math.ceil(collected.length / pageSize) },
   );
+}
+
+function conciseVote(v: MemberVote): MemberVoteConcise {
+  return { house: v.house, title: v.title, date: v.date, vote: v.vote, passed: v.passed };
 }
 
 function applyFilters(items: RawVotingItem[], input: MemberVotingHistoryInput): RawVotingItem[] {
@@ -120,9 +129,10 @@ export const memberVotingHistoryToolDefinition = {
     '',
     'Wrong for: details of a single division like ayes-by-party (use parliament_get_division); cross-member voting analysis (use parliament_topic_tracker); the underlying debate text (use parliament_get_debate).',
     '',
-    'Inputs: member_id (required, resolve via parliament_find_member), topic (substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20).',
+    'Inputs: member_id (required, resolve via parliament_find_member), topic (substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20), response_format (concise|detailed; detailed adds division_id/number and aye/no counts for chaining to parliament_get_division).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberVotingHistoryInputSchema,
   handler: memberVotingHistory,

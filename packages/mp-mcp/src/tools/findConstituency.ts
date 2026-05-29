@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { searchConstituencies } from '../clients/members.js';
 import { isPostcode, lookupPostcode } from '../clients/postcodes.js';
-import type { Citation, ToolResponse } from '../domain/citation.js';
+import type { ToolResponse } from '../domain/citation.js';
 import { constituencySummary } from '../domain/mappers.js';
 import type { ConstituencySummary } from '../domain/member.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
@@ -20,8 +21,10 @@ export const FindConstituencyInputSchema = z.object({
 
 export type FindConstituencyInput = z.infer<typeof FindConstituencyInputSchema>;
 
+export type ConstituencyConcise = Pick<ConstituencySummary, 'name' | 'current_member'>;
+
 export type FindConstituencyData = {
-  matches: ConstituencySummary[];
+  matches: ConstituencySummary[] | ConstituencyConcise[];
 };
 
 export async function findConstituency(
@@ -50,10 +53,16 @@ export async function findConstituency(
     );
   }
 
-  const matches = raw.map(constituencySummary);
-  const sources: Citation[] = raw.slice(0, 5).map((c) => Citations.constituency(c.id, c.name));
+  const summaries = raw.map(constituencySummary);
+  const matches =
+    input.response_format === 'detailed' ? summaries : summaries.map(toConciseConstituency);
+  const sources = collectSources(raw, (c) => Citations.constituency(c.id, c.name));
 
   return buildResponse({ matches }, sources, { upstream_calls: upstreamCalls });
+}
+
+function toConciseConstituency(c: ConstituencySummary): ConstituencyConcise {
+  return { name: c.name, current_member: c.current_member };
 }
 
 export const findConstituencyToolDefinition = {
@@ -65,9 +74,10 @@ export const findConstituencyToolDefinition = {
     '',
     'Wrong for: detail about the MP (use parliament_find_member or parliament_member_overview instead). Wrong for general member lookup by name (use parliament_find_member).',
     '',
-    'Inputs: query (constituency name | postcode), response_format (concise|detailed, default concise).',
+    'Inputs: query (constituency name | postcode), response_format (concise|detailed; detailed adds the constituency id and start/end dates).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: FindConstituencyInputSchema,
   handler: findConstituency,

@@ -24,7 +24,7 @@ describe('findConstituency', () => {
       .intercept({ path: /searchText=Chorley/, method: 'GET' })
       .reply(200, constituencySearchEnvelope([CHORLEY_CONSTITUENCY]), JSON_HDR);
 
-    const result = await findConstituency({ query: 'Chorley', response_format: 'concise' });
+    const result = await findConstituency({ query: 'Chorley', response_format: 'detailed' });
 
     expect(result.data.matches[0]).toMatchInlineSnapshot(`
       {
@@ -43,6 +43,20 @@ describe('findConstituency', () => {
       }
     `);
     expect(result.sources[0]?.url).toBe('https://members.parliament.uk/constituency/3985');
+  });
+
+  it('omits id and dates in concise but keeps name and current member', async () => {
+    mockAgent
+      .get('https://members-api.parliament.uk')
+      .intercept({ path: /searchText=Chorley/, method: 'GET' })
+      .reply(200, constituencySearchEnvelope([CHORLEY_CONSTITUENCY]), JSON_HDR);
+
+    const result = await findConstituency({ query: 'Chorley', response_format: 'concise' });
+    const match = result.data.matches[0];
+    expect(match).not.toHaveProperty('id');
+    expect(match).not.toHaveProperty('start_date');
+    expect(match?.name).toBe('Chorley');
+    expect(match?.current_member?.name).toBe('Sir Lindsay Hoyle');
   });
 
   it('routes a postcode through postcodes.io to a constituency search', async () => {

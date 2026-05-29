@@ -122,4 +122,89 @@ describe('searchHansard', () => {
       }),
     ).rejects.toMatchObject({ code: 'QUERY_TOO_BROAD' });
   });
+
+  it('selects the section-specific array rather than filtering contributions', async () => {
+    const writtenAnswerHit = {
+      ...HIT,
+      ContributionExtId: 'WA-1',
+      DebateSection: 'Written Answer on Schools',
+      Section: 'Written Answers',
+    };
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /search\.json/, method: 'GET' })
+      .reply(
+        200,
+        {
+          TotalContributions: 1,
+          TotalWrittenStatements: 0,
+          TotalWrittenAnswers: 1,
+          TotalDebates: 1,
+          TotalDivisions: 0,
+          Contributions: [HIT],
+          WrittenAnswers: [writtenAnswerHit],
+          WrittenStatements: [],
+        },
+        JSON_HDR,
+      )
+      .persist();
+
+    const writtenAnswers = await searchHansard({
+      query: 'schools',
+      section: 'written_answers',
+      assembly: 'both',
+      limit: 20,
+      response_format: 'concise',
+    });
+    expect(writtenAnswers.data.hits).toHaveLength(1);
+    expect(writtenAnswers.data.hits[0]?.contribution_ext_id).toBe('WA-1');
+
+    const debates = await searchHansard({
+      query: 'schools',
+      section: 'debates',
+      assembly: 'both',
+      limit: 20,
+      response_format: 'concise',
+    });
+    expect(debates.data.hits).toHaveLength(1);
+    expect(debates.data.hits[0]?.contribution_ext_id).toBe('C-1');
+  });
+
+  it('caps excerpts tighter in concise than detailed', async () => {
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /search\.json/, method: 'GET' })
+      .reply(
+        200,
+        {
+          TotalContributions: 1,
+          TotalWrittenStatements: 0,
+          TotalWrittenAnswers: 0,
+          TotalDebates: 1,
+          TotalDivisions: 0,
+          Contributions: [HIT],
+        },
+        JSON_HDR,
+      )
+      .persist();
+
+    const concise = await searchHansard({
+      query: 'climate',
+      section: 'all',
+      assembly: 'both',
+      limit: 20,
+      response_format: 'concise',
+    });
+    const detailed = await searchHansard({
+      query: 'climate',
+      section: 'all',
+      assembly: 'both',
+      limit: 20,
+      response_format: 'detailed',
+    });
+
+    expect(concise.data.hits[0]?.excerpt.length).toBeLessThanOrEqual(200);
+    expect(detailed.data.hits[0]?.excerpt.length).toBeGreaterThan(200);
+    expect(detailed.data.hits[0]?.excerpt.length).toBeLessThanOrEqual(400);
+  });
 });

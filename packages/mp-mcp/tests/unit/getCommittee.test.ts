@@ -124,4 +124,24 @@ describe('getCommittee', () => {
       getCommittee({ include_evidence: false, response_format: 'concise' }),
     ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
+
+  it('adds category and per-member detail only in detailed mode', async () => {
+    stubCommittee();
+    const concise = await getCommittee({
+      committee_id: 327,
+      include_evidence: false,
+      response_format: 'concise',
+    });
+    expect(concise.data).not.toHaveProperty('category');
+    expect(concise.data.members[0]).not.toHaveProperty('is_chair');
+
+    stubCommittee();
+    const detailed = await getCommittee({
+      committee_id: 327,
+      include_evidence: false,
+      response_format: 'detailed',
+    });
+    expect(detailed.data.category).toBe('Select');
+    expect(detailed.data.members[0]).toHaveProperty('is_chair');
+  });
 });

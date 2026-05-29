@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import {
   type HansardContribution,
+  type HansardSearchResult,
   searchHansard as searchHansardClient,
 } from '../clients/hansard.js';
-import type { Citation, ToolResponse } from '../domain/citation.js';
+import type { ToolResponse } from '../domain/citation.js';
 import type { HansardHit } from '../domain/debate.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
@@ -43,7 +45,7 @@ export const SearchHansardInputSchema = z.object({
     .max(50)
     .default(20)
     .describe(
-      'Maximum hits to return (1–50). Default 20. Excerpts are truncated to 400 characters.',
+      'Maximum hits to return (1–50). Default 20. Excerpts are truncated to 200 characters (concise) or 400 (detailed).',
     ),
   response_format: ResponseFormatSchema,
 });
@@ -57,7 +59,8 @@ export type SearchHansardData = {
   hits: HansardHit[];
 };
 
-const EXCERPT_CAP = 400;
+const EXCERPT_CONCISE = 200;
+const EXCERPT_DETAILED = 400;
 
 export async function searchHansard(
   input: SearchHansardInput,
@@ -72,14 +75,10 @@ export async function searchHansard(
     take: input.limit,
   });
 
-  const filtered = filterBySection(result.Contributions, input.section);
+  const selected = selectBySection(result, input.section);
+  const total = sectionTotal(result, input.section);
 
-  if (result.TotalContributions > 4000 && filtered.length === input.limit) {
-    // Heuristic: very broad searches that fully-fill the page need narrowing.
-    // We still return what we have, but signal the truncation via meta.
-  }
-
-  if (filtered.length === 0 && result.TotalContributions === 0) {
+  if (selected.length === 0 && total === 0) {
     throw new ParliamentToolError(
       'QUERY_TOO_BROAD',
       `Hansard returned no hits for "${input.query}".`,
@@ -87,32 +86,31 @@ export async function searchHansard(
     );
   }
 
-  const hits: HansardHit[] = filtered.map((c) => ({
+  const cap = input.response_format === 'detailed' ? EXCERPT_DETAILED : EXCERPT_CONCISE;
+  const hits: HansardHit[] = selected.slice(0, input.limit).map((c) => ({
     member_name: c.MemberName,
     member_id: c.MemberId,
     attributed_to: c.AttributedTo,
     debate_title: c.DebateSection,
     debate_ext_id: c.DebateSectionExtId,
     contribution_ext_id: c.ContributionExtId,
-    excerpt: truncate(c.ContributionTextFull ?? c.ContributionText ?? '', EXCERPT_CAP),
+    excerpt: truncate(c.ContributionTextFull ?? c.ContributionText ?? '', cap),
     date: c.SittingDate,
     house: c.House,
-    section: c.HansardSection ?? '',
+    section: c.Section || c.HansardSection || '',
   }));
 
-  const sources: Citation[] = hits
-    .slice(0, 5)
-    .map((h) =>
-      Citations.hansardContribution(
-        h.house,
-        h.date.slice(0, 10),
-        h.debate_ext_id,
-        h.debate_title,
-        h.contribution_ext_id,
-      ),
-    );
+  const sources = collectSources(hits, (h) =>
+    Citations.hansardContribution(
+      h.house,
+      h.date.slice(0, 10),
+      h.debate_ext_id,
+      h.debate_title,
+      h.contribution_ext_id,
+    ),
+  );
 
-  const truncated = result.TotalContributions > input.limit;
+  const truncated = total > input.limit;
   return buildResponse(
     {
       total_contributions: result.TotalContributions,
@@ -125,18 +123,50 @@ export async function searchHansard(
       upstream_calls: 1,
       truncated,
       truncation_hint: truncated
-        ? `Returned ${hits.length} of ${result.TotalContributions} contributions. Narrow with from_date/to_date or member_id.`
+        ? `Returned ${hits.length} of ${total} matches. Narrow with from_date/to_date or member_id; Hansard search returns a capped preview per section, so use parliament_get_debate for full text.`
         : undefined,
     },
   );
 }
 
-function filterBySection(
-  contributions: HansardContribution[],
+// Hansard's combined /search.json returns each content type in its own array,
+// so honouring `section` means picking the right array — not filtering rows.
+function selectBySection(
+  result: HansardSearchResult,
   section: SearchHansardInput['section'],
 ): HansardContribution[] {
-  if (section === 'all') return contributions;
-  return contributions;
+  const contributions = result.Contributions ?? [];
+  const writtenAnswers = result.WrittenAnswers ?? [];
+  const statements = result.WrittenStatements ?? [];
+  switch (section) {
+    case 'debates':
+      return contributions;
+    case 'written_answers':
+      return writtenAnswers;
+    case 'statements':
+      return statements;
+    default:
+      return [...contributions, ...writtenAnswers, ...statements].sort((a, b) =>
+        b.SittingDate.localeCompare(a.SittingDate),
+      );
+  }
+}
+
+function sectionTotal(result: HansardSearchResult, section: SearchHansardInput['section']): number {
+  switch (section) {
+    case 'debates':
+      return result.TotalContributions ?? 0;
+    case 'written_answers':
+      return result.TotalWrittenAnswers ?? 0;
+    case 'statements':
+      return result.TotalWrittenStatements ?? 0;
+    default:
+      return (
+        (result.TotalContributions ?? 0) +
+        (result.TotalWrittenAnswers ?? 0) +
+        (result.TotalWrittenStatements ?? 0)
+      );
+  }
 }
 
 function truncate(text: string, cap: number): string {
@@ -154,9 +184,10 @@ export const searchHansardToolDefinition = {
     '',
     "Wrong for: a member's formal voting record (use parliament_member_voting_history); the full text of a single debate (use parliament_get_debate); cross-Parliament topic round-ups including bills, written questions, and petitions (use parliament_topic_tracker).",
     '',
-    'Inputs: query (required), member_id (optional scope), section (debates|written_answers|statements|all, default all), assembly (commons|lords|both, default both), from_date / to_date (ISO-8601), limit (1–50, default 20). Excerpts are capped at 400 characters.',
+    'Inputs: query (required), member_id (optional scope), section (debates|written_answers|statements|all, default all), assembly (commons|lords|both, default both), from_date / to_date (ISO-8601), limit (1–50, default 20), response_format (concise|detailed; detailed widens excerpts from 200 to 400 characters).',
     '',
     'This response includes a `sources` array of hansard.parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: SearchHansardInputSchema,
   handler: searchHansard,

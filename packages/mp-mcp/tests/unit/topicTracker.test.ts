@@ -196,4 +196,24 @@ describe('topicTracker', () => {
     });
     expect(result.data.active_petitions.map((p) => p.id)).toEqual([2, 3, 1]);
   });
+
+  it('exposes chaining IDs only in detailed mode', async () => {
+    stubAll();
+    const concise = await topicTracker({
+      topic: 'renters rights',
+      lookback_days: 180,
+      response_format: 'concise',
+    });
+    expect(concise.data.recent_debates[0]).not.toHaveProperty('debate_ext_id');
+    expect(concise.data.recent_votes[0]).not.toHaveProperty('division_id');
+
+    stubAll();
+    const detailed = await topicTracker({
+      topic: 'renters rights',
+      lookback_days: 180,
+      response_format: 'detailed',
+    });
+    expect(detailed.data.recent_debates[0]?.debate_ext_id).toBe('D-99');
+    expect(detailed.data.recent_votes[0]?.division_id).toBe(5001);
+  });
 });

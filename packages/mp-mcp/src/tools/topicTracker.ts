@@ -5,6 +5,7 @@ import { type HansardDebateSearchHit, searchHansardDebates } from '../clients/ha
 import { type RawPetition, searchPetitions } from '../clients/petitions.js';
 import { type RawWrittenQuestion, searchWrittenQuestions } from '../clients/writtenQuestions.js';
 import type { Citation, ToolResponse } from '../domain/citation.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
 
@@ -33,28 +34,28 @@ export type TopicTrackerData = {
   bills_in_progress: Array<{
     id: number;
     short_title: string;
-    current_house: string;
+    current_house?: string;
     current_stage: string | null;
-    last_update: string;
+    last_update?: string;
     is_act: boolean;
   }>;
   recent_debates: Array<{
     title: string;
     house: 'Commons' | 'Lords';
     date: string;
-    debate_ext_id: string;
+    debate_ext_id?: string;
   }>;
   recent_votes: Array<{
-    division_id: number;
-    number: number;
+    division_id?: number;
+    number?: number;
     title: string;
     date: string;
     ayes: number;
     noes: number;
   }>;
   recent_written_questions: Array<{
-    uin: string;
-    asking_member_id: number;
+    uin?: string;
+    asking_member_id?: number;
     house: 'Commons' | 'Lords';
     date_tabled: string;
     question: string;
@@ -63,9 +64,9 @@ export type TopicTrackerData = {
   active_petitions: Array<{
     id: number;
     action: string;
-    state: string;
+    state?: string;
     signature_count: number;
-    created_at: string;
+    created_at?: string;
   }>;
 };
 
@@ -107,49 +108,47 @@ export async function topicTracker(
     .sort((a, b) => b.attributes.signature_count - a.attributes.signature_count)
     .slice(0, 5);
 
+  const detailed = input.response_format === 'detailed';
+
   const data: TopicTrackerData = {
     topic: input.topic,
     window: { from: fromIso, to: toIso },
     bills_in_progress: bills.slice(0, 5).map((b) => ({
       id: b.billId,
       short_title: b.shortTitle,
-      current_house: b.currentHouse,
       current_stage: b.currentStage?.description ?? null,
-      last_update: b.lastUpdate,
       is_act: b.isAct,
+      ...(detailed ? { current_house: b.currentHouse, last_update: b.lastUpdate } : {}),
     })),
     recent_debates: debates.slice(0, 5).map((d) => ({
       title: d.Title,
       house: d.House,
       date: d.SittingDate,
-      debate_ext_id: d.DebateSectionExtId,
+      ...(detailed ? { debate_ext_id: d.DebateSectionExtId } : {}),
     })),
     recent_votes: votes.slice(0, 5).map((v) => ({
-      division_id: v.DivisionId,
-      number: v.Number,
       title: v.Title,
       date: v.Date,
       ayes: v.AyeCount,
       noes: v.NoCount,
+      ...(detailed ? { division_id: v.DivisionId, number: v.Number } : {}),
     })),
     recent_written_questions: questions.slice(0, 5).map((q) => ({
-      uin: q.uin,
-      asking_member_id: q.askingMemberId,
       house: q.house,
       date_tabled: q.dateTabled,
-      question: truncate(q.questionText, 200),
+      question: truncate(q.questionText, detailed ? 400 : 200),
       answered: q.dateAnswered != null,
+      ...(detailed ? { uin: q.uin, asking_member_id: q.askingMemberId } : {}),
     })),
     active_petitions: topPetitions.map((p) => ({
       id: p.id,
       action: p.attributes.action,
-      state: p.attributes.state,
       signature_count: p.attributes.signature_count,
-      created_at: p.attributes.created_at,
+      ...(detailed ? { state: p.attributes.state, created_at: p.attributes.created_at } : {}),
     })),
   };
 
-  const sources = buildSources(data);
+  const sources = buildSources(bills, debates, votes, topPetitions);
   const upstreamCalls = 5;
   return buildResponse(data, sources, {
     upstream_calls: upstreamCalls,
@@ -171,21 +170,23 @@ function truncate(text: string, cap: number): string {
   return t.length <= cap ? t : `${t.slice(0, cap - 1).trimEnd()}…`;
 }
 
-function buildSources(data: TopicTrackerData): Citation[] {
-  const sources: Citation[] = [];
-  for (const b of data.bills_in_progress.slice(0, 2)) {
-    sources.push(Citations.bill(b.id, b.short_title));
-  }
-  for (const d of data.recent_debates.slice(0, 2)) {
-    sources.push(Citations.hansardDebate(d.house, d.date.slice(0, 10), d.debate_ext_id, d.title));
-  }
-  for (const v of data.recent_votes.slice(0, 2)) {
-    sources.push(Citations.division('Commons', v.division_id, v.title));
-  }
-  for (const p of data.active_petitions.slice(0, 2)) {
-    sources.push(Citations.petition(p.id, p.action));
-  }
-  return sources;
+function buildSources(
+  bills: RawBill[],
+  debates: HansardDebateSearchHit[],
+  votes: RawDivisionSummary[],
+  petitions: RawPetition[],
+): Citation[] {
+  return [
+    ...collectSources(bills, (b) => Citations.bill(b.billId, b.shortTitle), 2),
+    ...collectSources(
+      debates,
+      (d) =>
+        Citations.hansardDebate(d.House, d.SittingDate.slice(0, 10), d.DebateSectionExtId, d.Title),
+      2,
+    ),
+    ...collectSources(votes, (v) => Citations.division('Commons', v.DivisionId, v.Title), 2),
+    ...collectSources(petitions, (p) => Citations.petition(p.id, p.attributes.action), 2),
+  ];
 }
 
 export const topicTrackerToolDefinition = {
@@ -197,9 +198,10 @@ export const topicTrackerToolDefinition = {
     '',
     "Wrong for: a single member's voting record (use parliament_member_voting_history); the text of one debate (use parliament_get_debate); a single division's ayes-by-party (use parliament_get_division).",
     '',
-    'Inputs: topic (short noun phrase, required), lookback_days (1–365, default 90), response_format (concise|detailed, default concise).',
+    'Inputs: topic (short noun phrase, required), lookback_days (1–365, default 90), response_format (concise|detailed; detailed adds chaining IDs — debate_ext_id, division_id, question uin — plus secondary fields, and widens question excerpts from 200 to 400 characters).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: TopicTrackerInputSchema,
   handler: topicTracker,

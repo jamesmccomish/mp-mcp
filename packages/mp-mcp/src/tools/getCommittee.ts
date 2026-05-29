@@ -42,11 +42,11 @@ export type GetCommitteeData = {
   id: number;
   name: string;
   house: 'Commons' | 'Lords';
-  category: string | null;
-  start_date: string;
-  end_date: string | null;
+  category?: string | null;
+  start_date?: string;
+  end_date?: string | null;
   chair: { id: number; name: string; party: string } | null;
-  members: Array<{ id: number; name: string; party: string; from: string; is_chair: boolean }>;
+  members: Array<{ id: number; name: string; party: string; from?: string; is_chair?: boolean }>;
   recent_publications?: Array<{ id: number; title: string; type: string | null; date: string }>;
 };
 
@@ -73,23 +73,24 @@ export async function getCommittee(
   const publications = publicationsR.status === 'fulfilled' ? publicationsR.value : [];
 
   const chair = pickChair(members);
+  const detailed = input.response_format === 'detailed';
 
   const data: GetCommitteeData = {
     id: detail.id,
     name: detail.name,
     house: detail.house,
-    category: detail.category?.name ?? null,
-    start_date: detail.startDate,
-    end_date: detail.endDate,
     chair: chair ? { id: chair.memberId, name: chair.name, party: chair.partyName } : null,
-    members: members.map((m) => ({
-      id: m.memberId,
-      name: m.name,
-      party: m.partyName,
-      from: m.memberFrom,
-      is_chair: m.isChair,
-    })),
+    members: members.map((m) => {
+      const base = { id: m.memberId, name: m.name, party: m.partyName };
+      return detailed ? { ...base, from: m.memberFrom, is_chair: m.isChair } : base;
+    }),
   };
+
+  if (detailed) {
+    data.category = detail.category?.name ?? null;
+    data.start_date = detail.startDate;
+    data.end_date = detail.endDate;
+  }
 
   if (input.include_evidence) {
     data.recent_publications = publications.map((p: RawPublication) => ({
@@ -139,9 +140,10 @@ export const getCommitteeToolDefinition = {
     '',
     "Wrong for: an MP's committee memberships across all committees (use parliament_member_overview); searching debates a committee sat in (use parliament_search_hansard).",
     '',
-    'Inputs: one of committee_id (preferred) or name (substring match), include_evidence (default false), response_format (concise|detailed).',
+    "Inputs: one of committee_id (preferred) or name (substring match), include_evidence (default false), response_format (concise|detailed; detailed adds the committee category, start/end dates, and each member's seat and chair flag).",
     '',
     'This response includes a `sources` array of committees.parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetCommitteeInputSchema,
   handler: getCommittee,

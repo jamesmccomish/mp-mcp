@@ -20,6 +20,7 @@ import type { Interest } from '../domain/interest.js';
 import { memberDetailed, memberSummary } from '../domain/mappers.js';
 import type { MemberDetailed, MemberSummary } from '../domain/member.js';
 import type { MemberVote } from '../domain/vote.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
@@ -161,14 +162,15 @@ function buildSources(
   committees: RawCommitteeMembership[],
   voting: RawVotingItem[],
 ): Citation[] {
-  const sources: Citation[] = [Citations.member(member.id, member.nameDisplayAs)];
-  for (const c of committees.slice(0, 3)) {
-    sources.push(Citations.committee(c.id, c.name));
-  }
-  for (const v of voting.slice(0, 3)) {
-    sources.push(Citations.division(v.house === 1 ? 'Commons' : 'Lords', v.id, v.title));
-  }
-  return sources;
+  return [
+    Citations.member(member.id, member.nameDisplayAs),
+    ...collectSources(committees, (c) => Citations.committee(c.id, c.name), 3),
+    ...collectSources(
+      voting,
+      (v) => Citations.division(v.house === 1 ? 'Commons' : 'Lords', v.id, v.title),
+      3,
+    ),
+  ];
 }
 
 function unwrapRequired<T>(settled: PromiseSettledResult<T>, label: string): T {
@@ -196,6 +198,7 @@ export const memberOverviewToolDefinition = {
     'Inputs: member_id (resolve via parliament_find_member first), recent_votes_limit (default 5, max 20), response_format (concise|detailed, default concise).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberOverviewInputSchema,
   handler: memberOverview,

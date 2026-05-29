@@ -6,9 +6,10 @@ import {
   searchMembers,
 } from '../clients/members.js';
 import { isPostcode, lookupPostcode } from '../clients/postcodes.js';
-import type { Citation, ToolResponse } from '../domain/citation.js';
+import type { ToolResponse } from '../domain/citation.js';
 import { memberDetailed, memberSummary } from '../domain/mappers.js';
 import type { MemberDetailed, MemberSummary } from '../domain/member.js';
+import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse, shape } from '../lib/responseFormat.js';
@@ -83,7 +84,7 @@ export async function findMember(input: FindMemberInput): Promise<ToolResponse<F
   const matches =
     input.response_format === 'detailed' ? raw.map(memberDetailed) : raw.map(memberSummary);
 
-  const sources = buildSources(raw);
+  const sources = collectSources(raw, (m) => Citations.member(m.id, m.nameDisplayAs));
   return buildResponse({ matches, query_kind: queryKind }, sources, {
     upstream_calls: upstreamCalls,
   });
@@ -93,10 +94,6 @@ function assemblyToHouseId(assembly: FindMemberInput['assembly']): HouseId | und
   if (assembly === 'commons') return 1;
   if (assembly === 'lords') return 2;
   return undefined;
-}
-
-function buildSources(raw: RawMember[]): Citation[] {
-  return raw.slice(0, 5).map((m) => Citations.member(m.id, m.nameDisplayAs));
 }
 
 // Concise vs detailed only affects which mapper runs. The shape() helper isn't
@@ -127,6 +124,7 @@ export const findMemberToolDefinition = {
     'Inputs: query (name | constituency | postcode), assembly (commons|lords|both, default commons), current_only (default true), response_format (concise|detailed, default concise).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
+    'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: FindMemberInputSchema,
   handler: findMember,

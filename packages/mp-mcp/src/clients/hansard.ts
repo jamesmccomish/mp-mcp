@@ -17,6 +17,9 @@ export type HansardContribution = {
   DebateSectionId: number;
   DebateSectionExtId: string;
   SittingDate: string;
+  // Human-readable category: chamber venue for spoken contributions
+  // ("Commons Chamber"), or "Written Answers" / "Written Statements" for those.
+  Section: string;
   House: HansardHouse;
 };
 
@@ -26,7 +29,11 @@ export type HansardSearchResult = {
   TotalWrittenAnswers: number;
   TotalDebates: number;
   TotalDivisions: number;
+  // /search.json returns each type in its own array; written answers and
+  // statements never appear in Contributions.
   Contributions: HansardContribution[];
+  WrittenAnswers: HansardContribution[];
+  WrittenStatements: HansardContribution[];
 };
 
 export type HansardSearchParams = {
