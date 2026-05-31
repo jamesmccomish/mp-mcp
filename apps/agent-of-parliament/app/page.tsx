@@ -1,8 +1,10 @@
 'use client';
 
+import { CardView } from '@/components/cards/CardView';
 import { type ChatTurn, runAgentTurn } from '@/lib/agent/connector';
 import type { AgentEvent, CardKind } from '@/lib/agent/events';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
+import type { Citation } from 'mp-mcp/types';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? '';
@@ -20,7 +22,7 @@ interface RawCard {
   id: string;
   kind: CardKind;
   data: unknown;
-  sources: { title: string; url: string }[];
+  sources: Citation[];
 }
 
 function appendToLast(turns: ChatTurn[], text: string): ChatTurn[] {
@@ -226,38 +228,7 @@ export default function Page() {
           <p style={{ color: '#999' }}>Cards will appear here as the agent finds data.</p>
         ) : (
           cards.map((card) => (
-            <div
-              key={card.id}
-              style={{
-                border: '1px solid #ccc',
-                borderRadius: 8,
-                padding: 12,
-                margin: '0 0 12px',
-                background: '#fff',
-              }}
-            >
-              <div style={{ fontSize: 12, textTransform: 'uppercase', color: '#888' }}>
-                {card.kind}
-              </div>
-              <pre style={{ fontSize: 12, overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-                {JSON.stringify(card.data, null, 2)}
-              </pre>
-              {card.sources.length > 0 && (
-                <div style={{ fontSize: 12 }}>
-                  {card.sources.map((s) => (
-                    <a
-                      key={s.url}
-                      href={s.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{ display: 'block' }}
-                    >
-                      {s.title}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
+            <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
           ))
         )}
         <footer style={{ fontSize: 11, color: '#999', marginTop: 24 }}>
