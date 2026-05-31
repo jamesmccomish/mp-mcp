@@ -197,6 +197,35 @@ describe('topicTracker', () => {
     expect(result.data.active_petitions.map((p) => p.id)).toEqual([2, 3, 1]);
   });
 
+  it('passes the topic to the Hansard debate search under queryParameters.searchTerm', async () => {
+    // Regression: searchHansardDebates shared the bare-key bug, so the topic
+    // tracker's debate column was unfiltered. allSettled tolerates the other
+    // four sources failing, so we stub only the debate search and assert it
+    // carries the term under the namespaced key.
+    let debatesPath = '';
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /\/search\/debates\.json/, method: 'GET' })
+      .reply(
+        200,
+        (opts) => {
+          debatesPath = opts.path;
+          return { Results: [DEBATE], TotalResultCount: 1 };
+        },
+        JSON_HDR,
+      );
+
+    await topicTracker({
+      topic: 'renters rights',
+      lookback_days: 180,
+      response_format: 'concise',
+    });
+
+    const q = new URLSearchParams(debatesPath.split('?')[1] ?? '');
+    expect(q.get('queryParameters.searchTerm')).toBe('renters rights');
+    expect(q.has('searchTerm')).toBe(false);
+  });
+
   it('exposes chaining IDs only in detailed mode', async () => {
     stubAll();
     const concise = await topicTracker({
