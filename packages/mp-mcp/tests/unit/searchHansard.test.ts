@@ -36,6 +36,48 @@ const HIT = {
 };
 
 describe('searchHansard', () => {
+  it('sends the term under queryParameters.searchTerm, not a bare key', async () => {
+    // Regression: the bug sent `searchTerm=...` (and bare take/house), which
+    // Hansard silently ignores, so every query returned the same unfiltered
+    // global results. Every search param must carry the `queryParameters.`
+    // prefix. We assert the wire format the agent actually hits.
+    let requestPath = '';
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /search\.json/, method: 'GET' })
+      .reply(
+        200,
+        (opts) => {
+          requestPath = opts.path;
+          return {
+            TotalContributions: 1,
+            TotalWrittenStatements: 0,
+            TotalWrittenAnswers: 0,
+            TotalDebates: 1,
+            TotalDivisions: 0,
+            Contributions: [HIT],
+          };
+        },
+        JSON_HDR,
+      );
+
+    await searchHansard({
+      query: 'climate change',
+      section: 'all',
+      assembly: 'commons',
+      limit: 7,
+      response_format: 'concise',
+    });
+
+    const q = new URLSearchParams(requestPath.split('?')[1] ?? '');
+    expect(q.get('queryParameters.searchTerm')).toBe('climate change');
+    // The bare key the bug used must be absent.
+    expect(q.has('searchTerm')).toBe(false);
+    // The same prefix omission silently dropped the limit and chamber filter.
+    expect(q.get('queryParameters.take')).toBe('7');
+    expect(q.get('queryParameters.house')).toBe('Commons');
+  });
+
   it('returns truncated excerpts and citations', async () => {
     mockAgent
       .get('https://hansard-api.parliament.uk')

@@ -51,6 +51,7 @@
     "dev": "tsc -p tsconfig.build.json --watch",
     "prepack": "pnpm build",
     "typecheck": "tsc --noEmit && tsc --noEmit -p evals/tsconfig.json",
+    "pretest": "pnpm build",
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:types": "tsx scripts/gen-types.ts",

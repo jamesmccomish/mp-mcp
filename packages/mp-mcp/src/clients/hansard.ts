@@ -49,13 +49,17 @@ export type HansardSearchParams = {
 export async function searchHansard(params: HansardSearchParams): Promise<HansardSearchResult> {
   return getJson<HansardSearchResult>(`${BASE}/search.json`, {
     query: {
-      searchTerm: params.searchTerm,
+      // Hansard binds every search param under the `queryParameters.` object
+      // (see src/generated/hansard.d.ts, Search_FullSearch). A bare key is
+      // silently dropped, so the term must carry the prefix or the API returns
+      // unfiltered global results.
+      'queryParameters.searchTerm': params.searchTerm,
       'queryParameters.memberId': params.memberId,
       'queryParameters.house': params.house,
-      startDate: params.startDate,
-      endDate: params.endDate,
-      take: params.take ?? 20,
-      skip: params.skip ?? 0,
+      'queryParameters.startDate': params.startDate,
+      'queryParameters.endDate': params.endDate,
+      'queryParameters.take': params.take ?? 20,
+      'queryParameters.skip': params.skip ?? 0,
     },
   });
 }
@@ -73,13 +77,14 @@ export async function searchHansardDebates(
 ): Promise<{ Results: HansardDebateSearchHit[]; TotalResultCount: number }> {
   return getJson(`${BASE}/search/debates.json`, {
     query: {
-      searchTerm: params.searchTerm,
+      // Same `queryParameters.` binding as /search.json (Search_SearchDebates).
+      'queryParameters.searchTerm': params.searchTerm,
       'queryParameters.memberId': params.memberId,
       'queryParameters.house': params.house,
-      startDate: params.startDate,
-      endDate: params.endDate,
-      take: params.take ?? 20,
-      skip: params.skip ?? 0,
+      'queryParameters.startDate': params.startDate,
+      'queryParameters.endDate': params.endDate,
+      'queryParameters.take': params.take ?? 20,
+      'queryParameters.skip': params.skip ?? 0,
     },
   });
 }
