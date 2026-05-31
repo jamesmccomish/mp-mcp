@@ -1,5 +1,16 @@
-export type { Citation, House, ResponseFormat, ToolResponse, ToolResponseMeta } from './domain/citation.js';
-export type { MemberStatus, MemberSummary, MemberDetailed, ConstituencySummary } from './domain/member.js';
+export type {
+  Citation,
+  House,
+  ResponseFormat,
+  ToolResponse,
+  ToolResponseMeta,
+} from './domain/citation.js';
+export type {
+  MemberStatus,
+  MemberSummary,
+  MemberDetailed,
+  ConstituencySummary,
+} from './domain/member.js';
 export type { Vote, MemberVote, DivisionDetail } from './domain/vote.js';
 export type { HansardHit, DebateContribution, DebateDetail } from './domain/debate.js';
 export type { Interest } from './domain/interest.js';

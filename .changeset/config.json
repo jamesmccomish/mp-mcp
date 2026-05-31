@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["westminster-watch", "mcp-host"]
+  "ignore": ["agent-of-parliament", "mcp-host"]
 }

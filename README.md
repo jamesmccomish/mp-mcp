@@ -7,7 +7,8 @@ Built to let agents use UK Parliament data with intent-led tools, citation-first
 ## Packages
 
 - [`packages/mp-mcp`](packages/mp-mcp) — the MCP server (this is the library).
-- [`apps/westminster-watch`](apps/westminster-watch) — consumer demo (stubbed; see its README).
+- [`apps/agent-of-parliament`](apps/agent-of-parliament) — browser demo: ask Parliament questions, watch cited cards assemble (see its README).
+- [`apps/mcp-host`](apps/mcp-host) — HTTP host that wraps the MCP server behind a stateless `/mcp` for the demo.
 
 ## Data and attribution
 

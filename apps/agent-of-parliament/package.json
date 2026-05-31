@@ -1,13 +1,33 @@
 {
-  "name": "westminster-watch",
+  "name": "agent-of-parliament",
   "version": "0.0.0",
   "private": true,
-  "description": "Stub for the planned mp-mcp consumer app. Not implemented in this build.",
+  "description": "Browser demo: ask UK Parliament questions in plain English and watch cited cards assemble, powered by mp-mcp over HTTP via Anthropic's MCP connector.",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "echo 'westminster-watch: stub package, nothing to build' && exit 0",
-    "typecheck": "echo 'westminster-watch: stub package, nothing to typecheck' && exit 0",
-    "test": "echo 'westminster-watch: stub package, nothing to test' && exit 0"
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.0",
+    "mp-mcp": "workspace:*",
+    "next": "^16.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/node": "^22.10.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
   }
 }
