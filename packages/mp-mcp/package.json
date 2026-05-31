@@ -35,6 +35,10 @@
     "./stdio": {
       "types": "./dist/stdio.d.ts",
       "default": "./dist/stdio.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
     }
   },
   "bin": {
