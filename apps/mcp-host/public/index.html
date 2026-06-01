@@ -1,10 +1,626 @@
 <!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"><title>mp-mcp host</title></head>
+<html lang="en-GB">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>mp-mcp — A Model Context Protocol server for UK Parliament data</title>
+  <meta name="description"
+    content="An open-source Model Context Protocol (MCP) server for UK Parliament data — members, votes, debates, committees. Every answer is cited to the official parliament.uk record.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="mp-mcp — A Model Context Protocol server for UK Parliament data">
+  <meta property="og:description"
+    content="Nine tools and four prompts for the UK parliamentary record, with every answer cited to the official source.">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g fill='none' stroke='%2300603c' stroke-width='4'><path d='M8 14H56M16 14V52M24 14V52M32 14V52M40 14V52M48 14V52'/><path d='M8 28H56M8 40H56' stroke-width='3'/></g></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Libre+Caslon+Display&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f4f0e6;
+      --ground: #e3dccb;
+      --ink: #211e18;
+      --muted: #6b6453;
+      --green: #00603c;
+      --gilt: #a9842c;
+      --rule: #cdc4ad;
+      --serif: "EB Garamond", Georgia, "Times New Roman", serif;
+      --display: "Libre Caslon Display", Georgia, serif;
+      --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background-color: var(--ground);
+      background-image: radial-gradient(120% 80% at 50% 0%, #ece5d4 0%, var(--ground) 70%);
+      color: var(--ink);
+      font-family: var(--serif);
+      font-size: 19px;
+      line-height: 1.62;
+      padding: 48px 20px 96px;
+    }
+
+    .page {
+      position: relative;
+      max-width: 768px;
+      margin: 0 auto;
+      background: var(--paper);
+      padding: 72px clamp(28px, 6vw, 76px) 60px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 24px 60px -28px rgba(40, 32, 12, 0.45),
+        0 2px 6px rgba(40, 32, 12, 0.10);
+      border-top: 3px solid var(--green);
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .page>* {
+      position: relative;
+    }
+
+    .letterhead {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .emblem {
+      width: 46px;
+      height: 46px;
+      color: var(--green);
+      flex: none;
+    }
+
+    .wordmark {
+      line-height: 1;
+    }
+
+    .wordmark b {
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: 34px;
+      letter-spacing: 0.04em;
+    }
+
+    .wordmark .dot {
+      color: var(--gilt);
+    }
+
+    .wordmark>span {
+      display: block;
+      margin-top: 7px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .rule-double {
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      height: 4px;
+      margin: 22px 0 18px;
+    }
+
+    .refline {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px 18px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .title {
+      margin: 46px 0 0;
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: clamp(31px, 5.6vw, 48px);
+      line-height: 1.08;
+      letter-spacing: 0.005em;
+    }
+
+    .salute {
+      margin: 40px 0 0;
+      font-style: italic;
+      font-size: 21px;
+    }
+
+    .abstract {
+      margin-top: 14px;
+    }
+
+    .abstract p {
+      margin: 0 0 16px;
+    }
+
+    .abstract p:first-of-type::first-letter {
+      font-family: var(--display);
+      float: left;
+      font-size: 72px;
+      line-height: 0.74;
+      padding: 8px 12px 0 0;
+      color: var(--gilt);
+    }
+
+    section {
+      margin-top: 44px;
+    }
+
+    .sec-head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin: 0 0 18px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--gilt);
+    }
+
+    .sec-head::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--rule);
+    }
+
+    .lede {
+      margin: 0 0 22px;
+    }
+
+    .group-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin: 22px 0 10px;
+    }
+
+    .instr {
+      padding: 9px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .instr:last-child {
+      border-bottom: 0;
+    }
+
+    .instr .name {
+      font-family: var(--mono);
+      font-size: 14.5px;
+      color: var(--ink);
+    }
+
+    .instr .desc {
+      color: var(--muted);
+      font-size: 17.5px;
+    }
+
+    .order {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .order:last-child {
+      border-bottom: 0;
+    }
+
+    .order .name {
+      font-family: var(--mono);
+      font-size: 14.5px;
+    }
+
+    .order .desc {
+      color: var(--muted);
+      font-size: 17.5px;
+    }
+
+    .citation {
+      margin-top: 44px;
+      padding: 22px 26px;
+      background: rgba(0, 96, 60, 0.05);
+      border-left: 3px solid var(--green);
+    }
+
+    .citation .sec-head {
+      color: var(--green);
+    }
+
+    .citation .sec-head::after {
+      background: rgba(0, 96, 60, 0.25);
+    }
+
+    .citation p {
+      margin: 0;
+    }
+
+    .citation code {
+      font-family: var(--mono);
+      font-size: 0.84em;
+      background: rgba(0, 96, 60, 0.10);
+      padding: 1px 5px;
+      border-radius: 2px;
+    }
+
+    .install {
+      margin-top: 16px;
+    }
+
+    .cmd {
+      position: relative;
+      margin: 14px 0;
+      padding: 16px 56px 16px 18px;
+      background: #211e18;
+      color: #f0ead8;
+      font-family: var(--mono);
+      font-size: 14px;
+      border-radius: 3px;
+      overflow-x: auto;
+    }
+
+    .cmd .prompt {
+      color: var(--gilt);
+      user-select: none;
+    }
+
+    .copy {
+      position: absolute;
+      top: 9px;
+      right: 9px;
+      border: 1px solid #4a4536;
+      background: #2c281f;
+      color: #cdbf95;
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 8px;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .copy:hover {
+      color: #f0ead8;
+      border-color: var(--gilt);
+    }
+
+    .signoff {
+      margin-top: 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .signoff .said {
+      font-style: italic;
+      font-size: 20px;
+    }
+
+    .signoff .said b {
+      display: block;
+      font-style: normal;
+      font-family: var(--display);
+      font-size: 23px;
+      margin-top: 4px;
+    }
+
+    .enclosures {
+      margin-top: 48px;
+    }
+
+    .enclosures .sec-head {
+      color: var(--muted);
+    }
+
+    .links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .links li {
+      display: flex;
+      gap: 14px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .links li:last-child {
+      border-bottom: 0;
+    }
+
+    .links .k {
+      flex: none;
+      width: 116px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--green);
+      padding-top: 3px;
+    }
+
+    a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    a:hover {
+      border-bottom-color: var(--gilt);
+    }
+
+    footer {
+      margin-top: 52px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    a:focus-visible,
+    .copy:focus-visible {
+      outline: 2px solid var(--gilt);
+      outline-offset: 2px;
+      border-radius: 1px;
+    }
+
+    @media (max-width: 560px) {
+      body {
+        font-size: 18px;
+        padding: 16px 8px 60px;
+      }
+
+      .links .k {
+        width: 92px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+        padding: 0;
+        font-size: 12pt;
+      }
+
+      .page {
+        max-width: none;
+        padding: 0;
+        box-shadow: none;
+      }
+
+      .page::before {
+        display: none;
+      }
+
+      .copy {
+        display: none;
+      }
+
+      .cmd {
+        background: var(--paper);
+        color: var(--ink);
+        border: 1px solid var(--rule);
+      }
+
+      .cmd .prompt {
+        color: var(--muted);
+      }
+
+      .instr,
+      .order,
+      .citation,
+      .signoff {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
 <body>
-<h1>mp-mcp host</h1>
-<p>An HTTP host for the UK Parliament MCP server. Connect your agent or MCP client to the endpoint below.</p>
-<p>MCP endpoint: <code>/mcp</code></p>
-<p>Contains Parliamentary information licensed under the Open Parliament Licence v3.0.</p>
+  <main class="page">
+
+    <header class="letterhead">
+      <svg class="emblem" viewBox="0 0 64 64" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4"
+        stroke-linecap="square">
+        <path d="M12 12 H52" />
+        <path d="M18 12 V48 M26 12 V48 M32 12 V48 M38 12 V48 M46 12 V48" />
+        <path d="M12 22 H52 M12 32 H52 M12 42 H52" stroke-width="1.8" />
+        <path d="M18 48 l-3 7 6 0 z M26 48 l-3 7 6 0 z M32 48 l-3 7 6 0 z M38 48 l-3 7 6 0 z M46 48 l-3 7 6 0 z"
+          fill="currentColor" stroke="none" />
+      </svg>
+      <div class="wordmark">
+        <b>mp<span class="dot">·</span>mcp</b>
+        <span>Agent friendly UK Parliamentary data</span>
+      </div>
+    </header>
+
+    <div class="rule-double"></div>
+
+    <div class="refline">
+      <span>Ref. UK&#8209;PARL / MCP / v1</span>
+      <span>Open Parliament Licence v3.0</span>
+      <!-- <span>31st May 2026</span> -->
+    </div>
+
+    <h1 class="title">A Model Context Protocol for UK Parliament data.</h1>
+
+    <p class="salute">Dear Citizen,</p>
+
+    <div class="abstract">
+      <p>Parliament has worked hard to open up Westminster, making nearly every datapoint public through APIs. <em>[Hear
+          hear]</em> This data spans more than ten domains, from bills to votes to questions, each with its own
+        responsibilities, endpoints and schemas. That suits developers, but it burdens agents. Working out which
+        endpoint to call, how to format the request, and how to parse the response costs multiple round trips and wasted
+        tokens.</p>
+      <p>If we are to foster an inclusive environment for our agentic counterparts, we must do better. <strong>mp-mcp</strong> is a
+        step in this direction. Agents can now replace the scattered APIs with a single interface that guides their
+        exploration and returns clean, structured JSON, so they spend tokens on thinking, not plumbing. With <strong>mp-mcp</strong>
+        agents can talk with Westminster and conversationally present parliamentary data to users. <em>[Hear
+        hear]</em> </p>
+    </div>
+
+    <section>
+      <h2 class="sec-head">Tools</h2>
+      <p class="lede">Nine tools, grouped by intent, cover the whole of an agent's business with Parliament.</p>
+
+      <div class="group-label">Identity</div>
+      <div class="instr">
+        <div class="name">parliament_find_member</div>
+        <div class="desc">Find a sitting or former member by name, constituency, or postcode.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_find_constituency</div>
+        <div class="desc">Resolve a constituency or postcode to its seat and current MP.</div>
+      </div>
+
+      <div class="group-label">Synthesis</div>
+      <div class="instr">
+        <div class="name">parliament_member_overview</div>
+        <div class="desc">A member in one call: synopsis, committees, recent votes and contributions, registered
+          interests.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_member_voting_history</div>
+        <div class="desc">How a member has voted over time, filtered by topic or date.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_search_hansard</div>
+        <div class="desc">Full-text search of debates, written answers, and ministerial statements.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_get_debate</div>
+        <div class="desc">The complete text of a single Hansard debate.</div>
+      </div>
+
+      <div class="group-label">Detailed lookups</div>
+      <div class="instr">
+        <div class="name">parliament_get_division</div>
+        <div class="desc">One division in full: ayes and noes by party, tellers, and result.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_member_interests</div>
+        <div class="desc">Entries from the Register of Members' Financial Interests.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_get_committee</div>
+        <div class="desc">A committee's membership, chair, and recent work.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="sec-head">Prompts</h2>
+      <p class="lede">Four prompts orchestrate the tools into finished work.</p>
+      <div class="order">
+        <div class="name">mp-report-card</div>
+        <div class="desc">A one-page profile of any MP, from a name or a postcode.</div>
+      </div>
+      <div class="order">
+        <div class="name">topic-tracker</div>
+        <div class="desc">A briefing on what Parliament is doing about a subject — bills, debates, votes, questions,
+          petitions.</div>
+      </div>
+      <div class="order">
+        <div class="name">draft-constituent-letter</div>
+        <div class="desc">A letter to a member, grounded in their actual voting record and contributions.</div>
+      </div>
+      <div class="order">
+        <div class="name">vote-explainer</div>
+        <div class="desc">A plain account of a division: the motion, the result, the party breakdown, the debate around
+          it.</div>
+      </div>
+    </section>
+
+    <section class="citation">
+      <h2 class="sec-head">On Citation</h2>
+      <p>Every tool response includes a <code>sources</code> array of parliament.uk and hansard.parliament.uk URLs. When
+        your agent states a fact about a member, a vote, a debate, or a bill, it cites the corresponding URL inline. The
+        expectation is declared to the model on connection, in the server's own instructions. This is the difference
+        between an assistant that merely sounds authoritative and one that can be checked.</p>
+    </section>
+
+    <section class="install">
+      <h2 class="sec-head">To Take Your Seat</h2>
+      <p class="lede">Add the server to any MCP-capable client:</p>
+      <div class="cmd"><span class="prompt">$ </span><span id="cmd-text">claude mcp add mp-mcp -- npx -y
+          mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+      <p class="lede">Read the full technical documentation on <a
+          href="https://github.com/jamesmccomish/mp-mcp">GitHub</a>.</p>
+    </section>
+
+    <div class="signoff">
+      <div class="said">I have the honour to be, &amp;c.,<b>the maintainers of mp-mcp</b></div>
+    </div>
+
+    <section class="enclosures">
+      <h2 class="sec-head">Enclosures</h2>
+      <ul class="links">
+        <li><span class="k">Source</span><a href="https://github.com/jamesmccomish/mp-mcp">GitHub</a></li>
+        <li><span class="k">Example app</span><a href="https://agentofparliament.org">Agent Of Parliament</a></li>
+        <li><span class="k">Package</span><a href="https://www.npmjs.com/package/mp-mcp">mp-mcp</a>
+        </li>
+        <li><span class="k">Data Licence</span><a
+            href="https://www.parliament.uk/site-information/copyright-parliament/open-parliament-licence/">Open
+            Parliament Licence v3.0</a></li>
+        <li><span class="k">Code Licence</span><a
+            href="https://github.com/jamesmccomish/mp-mcp/blob/main/LICENSE">MIT</a></li>
+        <li><span class="k">Developer</span><a href="https://x.com/james_mccomish">James McComish</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      Contains Parliamentary information licensed under the Open Parliament Licence v3.0. The code is released under the
+      MIT licence. mp-mcp is an independent, open-source project; it is not affiliated with, nor endorsed by, the UK
+      Parliament.
+    </footer>
+
+  </main>
+
+  <script>
+    document.querySelector(".copy")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      if (!navigator.clipboard) return;
+      navigator.clipboard.writeText(document.getElementById("cmd-text").textContent).then(() => {
+        button.textContent = "Copied";
+        setTimeout(() => { button.textContent = "Copy"; }, 1400);
+      }).catch(() => { });
+    });
+  </script>
 </body>
+
 </html>
