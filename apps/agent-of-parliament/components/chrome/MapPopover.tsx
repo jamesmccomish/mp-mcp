@@ -37,7 +37,16 @@ export function MapPopover({
   if (!open) return null;
 
   return (
-    <dialog ref={ref} className={styles.pop} aria-label="Constituencies in view" open>
+    <dialog
+      ref={ref}
+      className={styles.pop}
+      aria-label="Constituencies in view"
+      open
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
       <div className={styles.head}>In view</div>
       {highlights.length === 0 ? (
         <div className={styles.empty}>No constituency in this conversation yet.</div>
