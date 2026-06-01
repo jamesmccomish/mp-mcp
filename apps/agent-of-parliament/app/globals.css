@@ -1,3 +1,51 @@
+:root {
+  /* Paper & ink */
+  --paper: #f4f0e6;
+  --ground: #e3dccb;
+  --ink: #211e18;
+  --muted: #6b6453;
+  --rule: #cdc4ad;
+
+  /* Civic accents */
+  --green: #00603c;
+  --green-tint: rgba(0, 96, 60, 0.05);
+  --green-line: rgba(0, 96, 60, 0.25);
+  --lords-red: #a3253f;
+  --gilt: #a9842c;
+
+  /* Party accents — only inside cards */
+  --party-con: #0087dc;
+  --party-lab: #d50000;
+  --party-libdem: #faa61a;
+  --party-snp: #fff685;
+  --party-green: #6ab023;
+  --party-reform: #12b6cf;
+  --party-pc: #008142;
+  --party-dup: #d46a4c;
+  --party-sf: #326760;
+  --party-ind: #888888;
+
+  /* Status */
+  --aye: var(--green);
+  --no: var(--lords-red);
+  --focus: var(--gilt);
+  --danger: #8b1e1e;
+
+  /* Type — font-family vars come from next/font in layout.tsx */
+  --serif: var(--font-serif), Georgia, "Times New Roman", serif;
+  --display: var(--font-display), Georgia, serif;
+  --mono: var(--font-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  /* Geometry */
+  --radius-sm: 2px;
+  --radius: 3px;
+  --radius-lg: 6px;
+
+  /* Elevation */
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 6px 18px -10px rgba(40, 32, 12, 0.25);
+  --shadow-pop: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 18px 44px -18px rgba(40, 32, 12, 0.55);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -9,5 +57,40 @@ body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--ground);
+  background-image: radial-gradient(120% 80% at 50% 0%, #ece5d4 0%, var(--ground) 70%);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Reusable mono label (uppercase, letter-spaced). */
+.mono-label {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+/* Paper fractal-noise overlay; apply to the app shell element. */
+.paper-noise {
+  position: relative;
+}
+.paper-noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 1px;
 }
