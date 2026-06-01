@@ -1,0 +1,76 @@
+.lobby {
+  margin-top: 14px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 7px 0;
+}
+.label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  width: 46px;
+  color: var(--muted);
+}
+.track {
+  flex: 1;
+  height: 22px;
+  background: rgba(205, 196, 173, 0.4);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  border-radius: var(--radius-sm);
+}
+.aye .fill {
+  background: var(--aye);
+}
+.no .fill {
+  background: var(--no);
+}
+.count {
+  font-family: var(--mono);
+  font-size: 13px;
+  width: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.highlight .track {
+  outline: 2px solid var(--gilt);
+  outline-offset: 2px;
+}
+.voted {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gilt);
+  margin: 4px 0 0 58px;
+}
+.stack {
+  display: flex;
+  height: 9px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin: 14px 0 6px;
+}
+.stack span {
+  display: block;
+  height: 100%;
+}
+.legend {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.compact .track {
+  height: 12px;
+}
+.compact .label {
+  width: 40px;
+  font-size: 10px;
+}
