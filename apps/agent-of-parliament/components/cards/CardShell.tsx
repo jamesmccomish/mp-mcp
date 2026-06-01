@@ -1,70 +1,33 @@
 import type { Citation } from 'mp-mcp/types';
 import type { ReactNode } from 'react';
+import styles from './CardShell.module.css';
 
-// Shared frame for every card: an eyebrow label, the card body, and the citation
-// row. The citation row is non-negotiable — surfacing the `sources` URLs is the
-// project's credibility contract, so it renders on every card that has any.
+// Shared frame for every card: a mono kicker, an optional display-face title, the
+// card body, and the mono citation row. The citation row is non-negotiable —
+// surfacing the `sources` URLs is the project's credibility contract.
 export function CardShell({
-  eyebrow,
+  kicker,
+  title,
+  lords = false,
   children,
   sources,
 }: {
-  eyebrow: string;
+  kicker: string;
+  title?: string;
+  lords?: boolean;
   children: ReactNode;
   sources: Citation[];
 }) {
   return (
-    <article
-      style={{
-        border: '1px solid #d8d2c4',
-        borderRadius: 10,
-        background: '#fff',
-        padding: 16,
-        margin: '0 0 14px',
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: '#8a8270',
-          marginBottom: 10,
-        }}
-      >
-        {eyebrow}
-      </div>
-
+    <article className={`${styles.card} ${lords ? styles.lords : ''}`}>
+      <div className={styles.kicker}>{kicker}</div>
+      {title && <h2 className={styles.title}>{title}</h2>}
       {children}
-
       {sources.length > 0 && (
-        <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid #eee' }}>
-          <div
-            style={{
-              fontSize: 10,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#aaa',
-              marginBottom: 4,
-            }}
-          >
-            Sources
-          </div>
+        <div className={styles.sources}>
+          Sources:{' '}
           {sources.map((s) => (
-            <a
-              key={s.url}
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'block',
-                fontSize: 12,
-                color: '#1d5c4f',
-                textDecoration: 'none',
-                margin: '2px 0',
-              }}
-            >
+            <a key={s.url} href={s.url} target="_blank" rel="noreferrer">
               {s.title}
             </a>
           ))}
