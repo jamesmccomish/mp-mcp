@@ -1,0 +1,65 @@
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.toggleRow {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toggle {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.toggle:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+.toggleOn {
+  background: var(--green);
+  color: #f3efe4;
+  border-color: var(--green);
+}
+.error {
+  font-size: 13px;
+  color: var(--danger);
+}
+.excerpt {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 52ch;
+  border-left: 1px solid var(--rule);
+  padding-left: 16px;
+  margin: 8px 0 0;
+}
+.speaker {
+  font-family: var(--display);
+  font-size: 16px;
+}
+.rerendered {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.hit {
+  border-top: 1px solid var(--rule);
+  padding: 10px 0;
+}
+.dim {
+  color: var(--muted);
+}

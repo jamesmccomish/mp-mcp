@@ -1,0 +1,71 @@
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+  animation: rise 0.22s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.lords {
+  border-top: 3px solid var(--lords-red);
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: fade 0.22s ease both;
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+.kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lords .kicker {
+  color: var(--lords-red);
+}
+.title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.12;
+  margin: 5px 0 0;
+}
+.sources {
+  margin-top: 16px;
+  padding-top: 11px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.sources a {
+  color: var(--green);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.sources a:hover {
+  border-bottom-color: var(--gilt);
+}
+.sources a + a::before {
+  content: ", ";
+  color: var(--muted);
+}

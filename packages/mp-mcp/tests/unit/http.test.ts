@@ -63,9 +63,9 @@ describe('http.getJson', () => {
     await expect(getJson('https://example.test/flaky')).resolves.toEqual({ ok: true });
   });
 
-  it('throws UPSTREAM_UNAVAILABLE after MAX_ATTEMPTS of 5xx', async () => {
+  it('throws UPSTREAM_UNAVAILABLE after configured MAX_ATTEMPTS of 5xx', async () => {
     const pool = mockAgent.get('https://example.test');
-    pool.intercept({ path: '/down', method: 'GET' }).reply(503, 'busy').times(3);
+    pool.intercept({ path: '/down', method: 'GET' }).reply(503, 'busy').times(2);
 
     await expect(getJson('https://example.test/down')).rejects.toMatchObject({
       code: 'UPSTREAM_UNAVAILABLE',

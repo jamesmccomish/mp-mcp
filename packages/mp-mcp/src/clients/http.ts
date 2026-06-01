@@ -3,10 +3,6 @@ import { PACKAGE_NAME, PACKAGE_VERSION, REPO_URL, loadConfig } from '../config.j
 import { ParliamentToolError } from '../lib/errors.js';
 import { logger } from '../lib/logger.js';
 
-const DEFAULT_TIMEOUT_MS = 10_000;
-const MAX_ATTEMPTS = 3;
-const BASE_BACKOFF_MS = 250;
-
 const sharedAgent = new Agent({
   keepAliveTimeout: 30_000,
   keepAliveMaxTimeout: 60_000,
@@ -16,6 +12,9 @@ const sharedAgent = new Agent({
 setGlobalDispatcher(sharedAgent);
 
 const config = loadConfig();
+const DEFAULT_TIMEOUT_MS = config.upstreamTimeoutMs;
+const MAX_ATTEMPTS = config.upstreamMaxAttempts;
+const BASE_BACKOFF_MS = config.upstreamBaseBackoffMs;
 const baseUserAgent = `${PACKAGE_NAME}/${PACKAGE_VERSION} (+${REPO_URL})`;
 const userAgent = config.userAgentSuffix
   ? `${baseUserAgent} ${config.userAgentSuffix}`

@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pnpm --filter mp-mcp build",
+  "outputDirectory": "public",
+  "regions": ["lhr1"],
+  "functions": {
+    "api/index.ts": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/mcp", "destination": "/api" },
+    { "source": "/health", "destination": "/api" }
+  ]
+}
