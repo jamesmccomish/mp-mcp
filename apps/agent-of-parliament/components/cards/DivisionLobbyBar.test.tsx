@@ -17,4 +17,11 @@ describe('DivisionLobbyBar', () => {
     );
     expect(screen.getByText('Stella Creasy voted Aye')).toBeInTheDocument();
   });
+
+  it('captions the member lobby when memberVote is no', () => {
+    render(
+      <DivisionLobbyBar ayes={10} noes={5} memberVote={{ name: 'Rishi Sunak', vote: 'no' }} />,
+    );
+    expect(screen.getByText('Rishi Sunak voted No')).toBeInTheDocument();
+  });
 });
