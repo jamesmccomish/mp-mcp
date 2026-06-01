@@ -11,26 +11,22 @@ import { getKey } from '@/lib/key/keyVault';
 import type { Citation } from 'mp-mcp/types';
 import { useState } from 'react';
 import { CardShell } from './CardShell';
+import styles from './DebateCard.module.css';
 import { formatDate } from './format';
 
 function SearchView({ vm }: { vm: DebateSearchViewModel }) {
   return (
-    <CardShell eyebrow="Hansard search" sources={vm.sources}>
-      <div style={{ fontSize: 13, color: '#5c5746', marginBottom: 10 }}>
+    <CardShell kicker="Hansard Search" sources={vm.sources}>
+      <div className={styles.meta}>
         Showing {vm.hitCount} matching contribution{vm.hitCount === 1 ? '' : 's'}.
       </div>
       {vm.hits.map((hit) => (
-        <div
-          key={`${hit.memberName}-${hit.excerpt.slice(0, 24)}`}
-          style={{ borderTop: '1px solid #efece4', padding: '10px 0' }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#26231a' }}>{hit.debateTitle}</div>
-          <div style={{ fontSize: 12, color: '#5c5746', margin: '2px 0 6px' }}>
+        <div key={`${hit.memberName}-${hit.excerpt.slice(0, 24)}`} className={styles.hit}>
+          <div className={styles.speaker}>{hit.debateTitle}</div>
+          <div className={styles.meta}>
             {hit.speaker} · {hit.section} · {formatDate(hit.date)}
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.5, color: '#3b3729', margin: 0 }}>
-            {hit.excerpt}
-          </p>
+          <p className={styles.excerpt}>{hit.excerpt}</p>
         </div>
       ))}
     </CardShell>
@@ -72,64 +68,40 @@ function DetailView({ vm }: { vm: DebateDetailViewModel }) {
   }
 
   return (
-    <CardShell eyebrow="Hansard debate" sources={vm.sources}>
-      <div style={{ fontSize: 19, fontWeight: 700, color: '#26231a', lineHeight: 1.3 }}>
-        {vm.title}
-      </div>
-      <div style={{ fontSize: 13, color: '#5c5746', marginTop: 3 }}>
+    <CardShell kicker="Hansard" title={vm.title} sources={vm.sources}>
+      <div className={styles.meta}>
         {vm.house} · {vm.location} · {formatDate(vm.date)}
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className={styles.toggleRow}>
         <button
           type="button"
           onClick={() => void togglePlain()}
           disabled={loading}
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            padding: '4px 10px',
-            borderRadius: 999,
-            border: '1px solid #d8d2c4',
-            background: showPlain ? '#0b6b4f' : '#f2efe6',
-            color: showPlain ? '#fff' : '#4a4636',
-            cursor: loading ? 'default' : 'pointer',
-          }}
+          className={`${styles.toggle} ${showPlain ? styles.toggleOn : ''}`}
         >
-          {loading ? 'Rewriting…' : showPlain ? 'Show Hansard text' : 'Plain English'}
+          {loading ? 'Rewriting…' : showPlain ? 'Verbatim' : 'Plain English'}
         </button>
-        {error && <span style={{ fontSize: 12, color: '#a3122b' }}>{error}</span>}
+        {error && <span className={styles.error}>{error}</span>}
       </div>
 
       {showPlain && plain ? (
-        <p
-          style={{
-            fontSize: 14,
-            lineHeight: 1.6,
-            color: '#3b3729',
-            marginTop: 12,
-            whiteSpace: 'pre-wrap',
-          }}
-        >
-          {plain}
-        </p>
+        <>
+          <p className={styles.excerpt} style={{ fontStyle: 'normal', whiteSpace: 'pre-wrap' }}>
+            {plain}
+          </p>
+          <div className={styles.rerendered}>re-rendered</div>
+        </>
       ) : (
         <div style={{ marginTop: 8 }}>
           {vm.contributions.map((c, i) => (
-            <div
-              key={`${c.speaker}-${i}`}
-              style={{ borderTop: '1px solid #efece4', padding: '8px 0' }}
-            >
-              {c.speaker && (
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#4a4636' }}>{c.speaker}</div>
-              )}
-              <p style={{ fontSize: 14, lineHeight: 1.55, color: '#3b3729', margin: '2px 0 0' }}>
-                {c.text}
-              </p>
+            <div key={`${c.speaker}-${i}`} className={styles.hit}>
+              {c.speaker && <div className={styles.speaker}>{c.speaker}</div>}
+              <p className={styles.excerpt}>{c.text}</p>
             </div>
           ))}
           {vm.truncated && (
-            <div style={{ fontSize: 12, color: '#9a9484', marginTop: 8 }}>
+            <div className={`${styles.meta} ${styles.dim}`} style={{ marginTop: 8 }}>
               Showing the first {vm.contributions.length} of {vm.totalItems} contributions.
             </div>
           )}
