@@ -23,7 +23,7 @@ export function CardView({
   if (kind === 'topic') return <TopicCard data={data} sources={sources} />;
 
   return (
-    <CardShell eyebrow={kind} sources={sources}>
+    <CardShell kicker={kind} sources={sources}>
       <pre style={{ fontSize: 12, overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>
         {JSON.stringify(data, null, 2)}
       </pre>

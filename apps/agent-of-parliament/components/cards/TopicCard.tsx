@@ -3,9 +3,9 @@ import type { TopicViewModel } from '@/lib/agent/adapters/topic';
 import type { Citation } from 'mp-mcp/types';
 import type { ReactNode } from 'react';
 import { CardShell } from './CardShell';
+import { DivisionLobbyBar } from './DivisionLobbyBar';
+import styles from './TopicCard.module.css';
 import { formatDate } from './format';
-
-const GREEN = '#0b6b4f';
 
 function Section({
   title,
@@ -14,116 +14,81 @@ function Section({
 }: { title: string; count: number; children: ReactNode }) {
   if (count === 0) return null;
   return (
-    <div style={{ marginTop: 16 }}>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-          color: '#9a9484',
-          marginBottom: 4,
-        }}
-      >
-        {title} <span style={{ color: '#c4bca8' }}>({count})</span>
+    <>
+      <div className={styles.group}>
+        {title} <span className={styles.count}>({count})</span>
       </div>
       {children}
-    </div>
+    </>
   );
-}
-
-function Row({ children }: { children: ReactNode }) {
-  return <div style={{ borderTop: '1px solid #efece4', padding: '8px 0' }}>{children}</div>;
-}
-
-const titleStyle = { fontSize: 13, fontWeight: 700, color: '#26231a', lineHeight: 1.35 } as const;
-const metaStyle = { fontSize: 12, color: '#5c5746', marginTop: 2 } as const;
-
-function pill(background: string, color: string) {
-  return {
-    fontSize: 10,
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.4,
-    padding: '1px 6px',
-    borderRadius: 999,
-    background,
-    color,
-  };
 }
 
 export function TopicCard({ data, sources }: { data: unknown; sources: Citation[] }) {
   const vm: TopicViewModel = adaptTopic(data, sources);
 
   return (
-    <CardShell eyebrow="Topic dossier" sources={vm.sources}>
-      <div style={{ fontSize: 19, fontWeight: 700, color: '#26231a', lineHeight: 1.3 }}>
-        {vm.topic}
-      </div>
-      <div style={metaStyle}>
+    <CardShell kicker="Topic" title={vm.topic} sources={vm.sources}>
+      <div className={styles.meta}>
         Parliamentary activity, {formatDate(vm.window.from)} – {formatDate(vm.window.to)}
       </div>
 
-      <Section title="Bills" count={vm.bills.length}>
+      <Section title="Bills in progress" count={vm.bills.length}>
         {vm.bills.map((b) => (
-          <Row key={b.id}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ ...titleStyle, flex: 1, minWidth: 0 }}>{b.title}</span>
-              {b.isAct && <span style={pill('#e3f3ec', GREEN)}>Act</span>}
+          <div key={b.id} className={styles.row}>
+            <div className={styles.flex}>
+              <span className={`${styles.title} ${styles.grow}`}>{b.title}</span>
+              {b.isAct && <span className={`${styles.tag} ${styles.tagGreen}`}>Act</span>}
             </div>
-            {b.stage && <div style={metaStyle}>{b.stage}</div>}
-          </Row>
+            {b.stage && <div className={styles.rowMeta}>{b.stage}</div>}
+          </div>
         ))}
       </Section>
 
-      <Section title="Divisions" count={vm.votes.length}>
-        {vm.votes.map((v) => (
-          <Row key={`${v.title}-${v.date}`}>
-            <div style={titleStyle}>{v.title}</div>
-            <div style={metaStyle}>
-              {formatDate(v.date)} · Ayes {v.ayes} · Noes {v.noes}
-            </div>
-          </Row>
-        ))}
-      </Section>
-
-      <Section title="Debates" count={vm.debates.length}>
+      <Section title="Recent debates" count={vm.debates.length}>
         {vm.debates.map((d) => (
-          <Row key={`${d.title}-${d.date}`}>
-            <div style={titleStyle}>{d.title}</div>
-            <div style={metaStyle}>
+          <div key={`${d.title}-${d.date}`} className={styles.row}>
+            <div className={styles.title}>{d.title}</div>
+            <div className={styles.rowMeta}>
               {d.house} · {formatDate(d.date)}
             </div>
-          </Row>
+          </div>
+        ))}
+      </Section>
+
+      <Section title="Recent votes" count={vm.votes.length}>
+        {vm.votes.map((v) => (
+          <div key={`${v.title}-${v.date}`} className={styles.row}>
+            <div className={styles.title}>{v.title}</div>
+            <div className={styles.rowMeta}>{formatDate(v.date)}</div>
+            <DivisionLobbyBar ayes={v.ayes} noes={v.noes} compact />
+          </div>
         ))}
       </Section>
 
       <Section title="Written questions" count={vm.questions.length}>
         {vm.questions.map((q) => (
-          <Row key={`${q.dateTabled}-${q.question.slice(0, 24)}`}>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <p style={{ fontSize: 13, lineHeight: 1.45, color: '#3b3729', margin: 0, flex: 1 }}>
+          <div key={`${q.dateTabled}-${q.question.slice(0, 24)}`} className={styles.row}>
+            <div className={styles.flex}>
+              <p className={`${styles.title} ${styles.grow}`} style={{ fontWeight: 400 }}>
                 {q.question}
               </p>
-              {q.answered ? (
-                <span style={pill('#e3f3ec', GREEN)}>Answered</span>
-              ) : (
-                <span style={pill('#f2efe6', '#9a9484')}>Awaiting</span>
-              )}
+              <span className={`${styles.tag} ${q.answered ? styles.tagGreen : styles.tagDim}`}>
+                {q.answered ? 'Answered' : 'Awaiting'}
+              </span>
             </div>
-            <div style={metaStyle}>
+            <div className={styles.rowMeta}>
               {q.house} · tabled {formatDate(q.dateTabled)}
             </div>
-          </Row>
+          </div>
         ))}
       </Section>
 
       <Section title="Petitions" count={vm.petitions.length}>
         {vm.petitions.map((p) => (
-          <Row key={p.action}>
-            <div style={titleStyle}>{p.action}</div>
-            <div style={metaStyle}>{p.signatures.toLocaleString('en-GB')} signatures</div>
-          </Row>
+          <div key={p.action} className={styles.row}>
+            <div className={styles.title}>{p.action}</div>
+            <div className={styles.rowMeta}>{p.signatures.toLocaleString('en-GB')} signatures</div>
+          </div>
         ))}
       </Section>
     </CardShell>
