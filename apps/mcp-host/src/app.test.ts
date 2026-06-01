@@ -11,6 +11,7 @@ const TOOL_NAMES = [
   'parliament_search_hansard',
   'parliament_get_debate',
   'parliament_topic_tracker',
+  'parliament_search_divisions',
   'parliament_get_division',
   'parliament_member_interests',
   'parliament_get_committee',
@@ -66,7 +67,7 @@ describe('mcp-host', () => {
     expect(json.status).toBe('ok');
   });
 
-  it('tools/list returns all 11 tools', async () => {
+  it('tools/list returns all 12 tools', async () => {
     const res = await app.fetch(
       mcpRequest({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
     );
@@ -75,7 +76,7 @@ describe('mcp-host', () => {
       result: { tools: Array<{ name: string }> };
     };
     const names = parsed.result.tools.map((t) => t.name);
-    expect(names).toHaveLength(11);
+    expect(names).toHaveLength(12);
     expect(names).toEqual(expect.arrayContaining(TOOL_NAMES));
   });
 

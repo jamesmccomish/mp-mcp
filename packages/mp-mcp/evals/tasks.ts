@@ -108,17 +108,17 @@ export const TASKS: EvalTask[] = [
     id: 'B3',
     category: 'voting',
     prompt: 'How did Conservatives vote on the latest tax measure?',
-    expected_tools: ['parliament_topic_tracker'],
+    expected_tools: ['parliament_search_divisions'],
     judge: {
       criteria:
-        'Identifies a recent tax-related division, reports the Conservative aye/no breakdown, and cites votes.parliament.uk.',
+        'Identifies a recent tax-related division (via parliament_search_divisions), reports the Conservative aye/no breakdown (via parliament_get_division), and cites votes.parliament.uk.',
     },
   },
   {
     id: 'B4',
     category: 'voting',
     prompt: 'Find votes about AI in the last year.',
-    expected_tools: ['parliament_topic_tracker'],
+    expected_tools: ['parliament_search_divisions'],
     judge: {
       criteria:
         'Returns at least one AI-related division from the last 12 months with citation, or honestly reports none if the upstream is genuinely empty.',

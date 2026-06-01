@@ -9,6 +9,7 @@ import { memberInterestsToolDefinition } from './memberInterests.js';
 import { memberOverviewToolDefinition } from './memberOverview.js';
 import { memberVotingHistoryToolDefinition } from './memberVotingHistory.js';
 import { pingToolDefinition } from './ping.js';
+import { searchDivisionsToolDefinition } from './searchDivisions.js';
 import { searchHansardToolDefinition } from './searchHansard.js';
 import { topicTrackerToolDefinition } from './topicTracker.js';
 
@@ -30,6 +31,7 @@ export function registerTools(server: McpServer): void {
   registerTool(server, searchHansardToolDefinition);
   registerTool(server, getDebateToolDefinition);
   registerTool(server, topicTrackerToolDefinition);
+  registerTool(server, searchDivisionsToolDefinition);
   registerTool(server, getDivisionToolDefinition);
   registerTool(server, memberInterestsToolDefinition);
   registerTool(server, getCommitteeToolDefinition);

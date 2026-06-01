@@ -46,7 +46,7 @@ export type TopicTrackerData = {
     debate_ext_id?: string;
   }>;
   recent_votes: Array<{
-    division_id?: number;
+    division_id: number;
     number?: number;
     title: string;
     date: string;
@@ -83,10 +83,11 @@ export async function topicTracker(
   const [billsR, debatesR, votesR, questionsR, petitionsR] = await Promise.allSettled([
     searchBills({ searchTerm: input.topic, take: 5 }),
     searchHansardDebates({ searchTerm: input.topic, startDate: fromIso, endDate: toIso, take: 5 }),
+    // No date window on the division search: upstream matches a literal title
+    // substring and is most-recent-first, so windowing silently zeroed common
+    // topics (e.g. "tax") whose matching divisions sit just outside lookback.
     searchCommonsDivisions({
       searchTerm: input.topic,
-      startDate: fromIso,
-      endDate: toIso,
       take: 5,
     }),
     searchWrittenQuestions({
@@ -104,7 +105,10 @@ export async function topicTracker(
   const questions = unwrap<RawWrittenQuestion[]>(questionsR) ?? [];
   const petitions = unwrap<RawPetition[]>(petitionsR) ?? [];
 
-  const topPetitions = [...petitions]
+  // The petitions API ignores its `search` param, so filter client-side; a
+  // topic heading with unrelated petitions under it is worse than none.
+  const topPetitions = petitions
+    .filter((p) => petitionMatchesTopic(p, input.topic))
     .sort((a, b) => b.attributes.signature_count - a.attributes.signature_count)
     .slice(0, 5);
 
@@ -127,11 +131,14 @@ export async function topicTracker(
       ...(detailed ? { debate_ext_id: d.DebateSectionExtId } : {}),
     })),
     recent_votes: votes.slice(0, 5).map((v) => ({
+      // division_id always present so the agent can chain to
+      // parliament_get_division (party breakdown) or parliament_search_divisions.
+      division_id: v.DivisionId,
       title: v.Title,
       date: v.Date,
       ayes: v.AyeCount,
       noes: v.NoCount,
-      ...(detailed ? { division_id: v.DivisionId, number: v.Number } : {}),
+      ...(detailed ? { number: v.Number } : {}),
     })),
     recent_written_questions: questions.slice(0, 5).map((q) => ({
       house: q.house,
@@ -159,6 +166,16 @@ export async function topicTracker(
 
 function unwrap<T>(settled: PromiseSettledResult<T>): T | null {
   return settled.status === 'fulfilled' ? settled.value : null;
+}
+
+function petitionMatchesTopic(petition: RawPetition, topic: string): boolean {
+  const haystack = `${petition.attributes.action} ${petition.attributes.background}`.toLowerCase();
+  const phrase = topic.toLowerCase().trim();
+  if (haystack.includes(phrase)) return true;
+  // Fall back to significant words (>=4 chars) so "renters rights" still matches
+  // a petition about "renter protections" via "renters" without dragging in noise.
+  const words = phrase.split(/\s+/).filter((w) => w.length >= 4);
+  return words.length > 0 && words.some((w) => haystack.includes(w));
 }
 
 function toIsoDate(d: Date): string {
@@ -196,9 +213,9 @@ export const topicTrackerToolDefinition = {
     '',
     'Good for: "what is Parliament doing about NHS waiting lists?", "track the renters reform bill", "AI policy activity in the last 6 months".',
     '',
-    "Wrong for: a single member's voting record (use parliament_member_voting_history); the text of one debate (use parliament_get_debate); a single division's ayes-by-party (use parliament_get_division).",
+    "Wrong for: a single member's voting record (use parliament_member_voting_history); searching or ranking divisions on a topic / how a party voted (use parliament_search_divisions); the text of one debate (use parliament_get_debate); a single division's ayes-by-party (use parliament_get_division). Its recent_votes are a teaser carrying division_id — chain to parliament_get_division for the party breakdown.",
     '',
-    'Inputs: topic (short noun phrase, required), lookback_days (1–365, default 90), response_format (concise|detailed; detailed adds chaining IDs — debate_ext_id, division_id, question uin — plus secondary fields, and widens question excerpts from 200 to 400 characters).',
+    'Inputs: topic (short noun phrase, required), lookback_days (1–365, default 90; note: division results are not date-windowed and are most-recent-first), response_format (concise|detailed; recent_votes always carries division_id; detailed adds further chaining IDs — debate_ext_id, division number, question uin — plus secondary fields, and widens question excerpts from 200 to 400 characters).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',

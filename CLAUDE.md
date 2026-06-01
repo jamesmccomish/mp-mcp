@@ -18,7 +18,7 @@ A demo app will eventually live in `apps/`; it is stubbed for now and out of sco
 
 - **Anthropic's latest standards.** When in doubt, cite the most current Anthropic engineering posts on tool design and MCP. The plan reflects: *Writing effective tools for agents* (Sep 2025), *Code execution with MCP* (Nov 2025), *Advanced tool use on the Claude Developer Platform* (Nov 2025).
 - **Citation contract.** Every tool response includes a `sources` array of parliament.uk / hansard.parliament.uk URLs. Every user-facing factual claim cites them inline. This is the credibility lever for the entire project.
-- **Consolidate over multiply.** Default answer to "should we add a tool?" is no. The 9 firm tools in the plan cover the agent's full intent space; add one only if the eval set proves a gap.
+- **Consolidate over multiply.** Default answer to "should we add a tool?" is no; add one only if the eval set proves a gap.
 - **Ask before going wide.** When audience, scope, or depth is ambiguous, raise a clarifying question rather than guessing.
 - **No emojis in deliverables.**
 

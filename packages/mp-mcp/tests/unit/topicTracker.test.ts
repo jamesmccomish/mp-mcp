@@ -189,12 +189,49 @@ describe('topicTracker', () => {
       .intercept({ path: /\/petitions\.json/, method: 'GET' })
       .reply(200, { data: [p1, p2, p3] }, JSON_HDR);
 
+    // Topic matches the petitions' content ("renter") so the client-side filter
+    // keeps all three; the test asserts the signature-count ordering.
     const result = await topicTracker({
-      topic: 'foo',
+      topic: 'renter',
       lookback_days: 90,
       response_format: 'concise',
     });
     expect(result.data.active_petitions.map((p) => p.id)).toEqual([2, 3, 1]);
+  });
+
+  it('filters out petitions unrelated to the topic (upstream ignores search)', async () => {
+    const unrelated = {
+      ...PETITION,
+      id: 9,
+      attributes: { ...PETITION.attributes, action: 'Dissolve Parliament', background: 'Call an election.' },
+    };
+    mockAgent
+      .get('https://bills-api.parliament.uk')
+      .intercept({ path: /\/api\/v1\/Bills/, method: 'GET' })
+      .reply(200, { items: [] }, JSON_HDR);
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /\/search\/debates\.json/, method: 'GET' })
+      .reply(200, { Results: [] }, JSON_HDR);
+    mockAgent
+      .get('https://commonsvotes-api.parliament.uk')
+      .intercept({ path: /\/data\/divisions\.json\/search/, method: 'GET' })
+      .reply(200, [], JSON_HDR);
+    mockAgent
+      .get('https://questions-statements-api.parliament.uk')
+      .intercept({ path: /\/api\/writtenquestions\/questions/, method: 'GET' })
+      .reply(200, { results: [] }, JSON_HDR);
+    mockAgent
+      .get('https://petition.parliament.uk')
+      .intercept({ path: /\/petitions\.json/, method: 'GET' })
+      .reply(200, { data: [PETITION, unrelated] }, JSON_HDR);
+
+    const result = await topicTracker({
+      topic: 'renters rights',
+      lookback_days: 90,
+      response_format: 'concise',
+    });
+    expect(result.data.active_petitions.map((p) => p.id)).toEqual([700001]);
   });
 
   it('passes the topic to the Hansard debate search under queryParameters.searchTerm', async () => {
@@ -226,7 +263,7 @@ describe('topicTracker', () => {
     expect(q.has('searchTerm')).toBe(false);
   });
 
-  it('exposes chaining IDs only in detailed mode', async () => {
+  it('always surfaces recent_votes division_id; gates other chaining IDs by mode', async () => {
     stubAll();
     const concise = await topicTracker({
       topic: 'renters rights',
@@ -234,7 +271,9 @@ describe('topicTracker', () => {
       response_format: 'concise',
     });
     expect(concise.data.recent_debates[0]).not.toHaveProperty('debate_ext_id');
-    expect(concise.data.recent_votes[0]).not.toHaveProperty('division_id');
+    // division_id is always present so the agent can chain to get_division.
+    expect(concise.data.recent_votes[0]?.division_id).toBe(5001);
+    expect(concise.data.recent_votes[0]).not.toHaveProperty('number');
 
     stubAll();
     const detailed = await topicTracker({
@@ -244,5 +283,6 @@ describe('topicTracker', () => {
     });
     expect(detailed.data.recent_debates[0]?.debate_ext_id).toBe('D-99');
     expect(detailed.data.recent_votes[0]?.division_id).toBe(5001);
+    expect(detailed.data.recent_votes[0]?.number).toBe(200);
   });
 });

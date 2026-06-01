@@ -1,12 +1,12 @@
 import { z } from 'zod';
+import { getMemberVoting } from '../clients/commonsVotes.js';
 import { type HouseId, type RawVotingItem, getVoting } from '../clients/members.js';
-import type { ToolResponse } from '../domain/citation.js';
+import type { ToolResponse, ToolResponseMeta } from '../domain/citation.js';
 import type { MemberVote } from '../domain/vote.js';
 import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
-import { ParliamentToolError } from '../lib/errors.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
-import { mapVoteFromRaw } from './_voteMapper.js';
+import { mapVoteFromMemberVotingRecord, mapVoteFromRaw } from './_voteMapper.js';
 
 export const MemberVotingHistoryInputSchema = z.object({
   member_id: z.number().int().positive().describe('Numeric member id from parliament_find_member.'),
@@ -56,35 +56,24 @@ export type MemberVotingHistoryData = {
 export async function memberVotingHistory(
   input: MemberVotingHistoryInput,
 ): Promise<ToolResponse<MemberVotingHistoryData>> {
-  const house: HouseId = input.assembly === 'commons' ? 1 : 2;
-  const pageSize = 100;
-  const cap = Math.min(input.limit * 4, 500);
-
-  const collected: RawVotingItem[] = [];
-  for (let skip = 0; skip < cap; skip += pageSize) {
-    const page = await getVoting(input.member_id, { house, take: pageSize, skip });
-    if (page.length === 0) break;
-    collected.push(...page);
-    if (collected.length >= cap) break;
-  }
-
-  const filtered = applyFilters(collected, input);
-
-  if (filtered.length === 0 && collected.length > 0) {
-    throw new ParliamentToolError(
-      'QUERY_TOO_BROAD',
-      `No divisions matched topic="${input.topic ?? ''}" in the requested date range.`,
-      'Widen the date range (from_date/to_date) or drop the topic filter to see all recent votes.',
-    );
-  }
-
-  const fullVotes = filtered.slice(0, input.limit).map(mapVoteFromRaw);
+  const { fullVotes, upstreamCalls } =
+    input.assembly === 'commons' ? await loadCommons(input) : await loadLords(input);
 
   const sources = collectSources(fullVotes, (v) =>
     Citations.division(v.house, v.division_id, v.title),
   );
 
   const votes = input.response_format === 'detailed' ? fullVotes : fullVotes.map(conciseVote);
+
+  // An empty set is a legitimate answer, not an error: the member may have
+  // abstained/been absent (membervoting only reports lobbies actually cast), or
+  // the topic filter (a literal title substring upstream) was too specific.
+  const meta: ToolResponseMeta = { upstream_calls: upstreamCalls };
+  if (fullVotes.length === 0) {
+    meta.truncation_hint = input.topic
+      ? `No recorded aye/no by member ${input.member_id} matched topic="${input.topic}". The member may have abstained or been absent, or the title-substring match was too specific — try a broader term or drop the topic filter.`
+      : `No recorded votes for member ${input.member_id} in the requested range.`;
+  }
 
   return buildResponse(
     {
@@ -98,8 +87,49 @@ export async function memberVotingHistory(
       },
     },
     sources,
-    { upstream_calls: Math.ceil(collected.length / pageSize) },
+    meta,
   );
+}
+
+// Commons: the Commons Votes membervoting endpoint filters by topic and date
+// server-side and returns the member's lobby per division directly.
+async function loadCommons(
+  input: MemberVotingHistoryInput,
+): Promise<{ fullVotes: MemberVote[]; upstreamCalls: number }> {
+  const records = await getMemberVoting({
+    memberId: input.member_id,
+    searchTerm: input.topic,
+    startDate: input.from_date,
+    endDate: input.to_date,
+    includeWhenMemberWasTeller: true,
+    take: input.limit,
+  });
+  return { fullVotes: records.map(mapVoteFromMemberVotingRecord), upstreamCalls: 1 };
+}
+
+// Lords: the Members API /Voting endpoint has no server-side topic/date filter,
+// so page a recency-capped window and filter in memory. (Lords reroute to the
+// symmetric Lords Votes endpoints is a follow-up.)
+async function loadLords(
+  input: MemberVotingHistoryInput,
+): Promise<{ fullVotes: MemberVote[]; upstreamCalls: number }> {
+  const house: HouseId = 2;
+  const pageSize = 100;
+  const cap = Math.min(input.limit * 4, 500);
+
+  const collected: RawVotingItem[] = [];
+  for (let skip = 0; skip < cap; skip += pageSize) {
+    const page = await getVoting(input.member_id, { house, take: pageSize, skip });
+    if (page.length === 0) break;
+    collected.push(...page);
+    if (collected.length >= cap) break;
+  }
+
+  const filtered = applyFilters(collected, input).slice(0, input.limit);
+  return {
+    fullVotes: filtered.map(mapVoteFromRaw),
+    upstreamCalls: Math.max(1, Math.ceil(collected.length / pageSize)),
+  };
 }
 
 function conciseVote(v: MemberVote): MemberVoteConcise {
@@ -123,13 +153,13 @@ function applyFilters(items: RawVotingItem[], input: MemberVotingHistoryInput): 
 export const memberVotingHistoryToolDefinition = {
   name: 'parliament_member_voting_history',
   description: [
-    "An MP's voting record over time, optionally filtered by topic keyword and date range. Returns aye/no/teller/absent plus the aggregate aye/no counts.",
+    "One MP's voting record over time, optionally filtered by topic keyword and date range. Returns how that member voted (aye/no/teller) per division plus the aggregate aye/no counts. Commons records are filtered server-side; an empty result is a truthful answer (the member abstained/was absent, or the term was too specific), not an error.",
     '',
     'Good for: "how has Diane Abbott voted on climate?", "Keir Starmer\'s rebellions against his own party", "votes by member 172 in 2025".',
     '',
-    'Wrong for: details of a single division like ayes-by-party (use parliament_get_division); cross-member voting analysis (use parliament_topic_tracker); the underlying debate text (use parliament_get_debate).',
+    'Wrong for: how a whole PARTY voted on a topic (use parliament_search_divisions); ayes-by-party for one division (use parliament_get_division); cross-domain topic round-ups (use parliament_topic_tracker); the underlying debate text (use parliament_get_debate).',
     '',
-    'Inputs: member_id (required, resolve via parliament_find_member), topic (substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20), response_format (concise|detailed; detailed adds division_id/number and aye/no counts for chaining to parliament_get_division).',
+    'Inputs: member_id (required, resolve via parliament_find_member), topic (literal substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20), response_format (concise|detailed; detailed adds division_id/number and aye/no counts for chaining to parliament_get_division).',
     '',
     'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',

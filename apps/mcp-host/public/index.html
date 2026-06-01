@@ -11,7 +11,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="mp-mcp — A Model Context Protocol for UK Parliament data">
   <meta property="og:description"
-    content="Nine tools and four prompts for the UK parliamentary record, with every answer cited to the official source.">
+    content="Ten tools and four prompts for the UK parliamentary record, with every answer cited to the official source.">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><g fill='none' stroke='%2300603c' stroke-width='4'><path d='M8 14H56M16 14V52M24 14V52M32 14V52M40 14V52M48 14V52'/><path d='M8 28H56M8 40H56' stroke-width='3'/></g></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -498,7 +498,7 @@
 
     <section>
       <h2 class="sec-head">Tools</h2>
-      <p class="lede">Nine tools, grouped by intent, cover the whole of an agent's business with Parliament.</p>
+      <p class="lede">Ten tools, grouped by intent, cover the whole of an agent's business with Parliament.</p>
 
       <div class="group-label">Identity</div>
       <div class="instr">
@@ -527,6 +527,11 @@
       <div class="instr">
         <div class="name">parliament_get_debate</div>
         <div class="desc">The complete text of a single Hansard debate.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_search_divisions</div>
+        <div class="desc">Find Commons divisions (recorded votes) on a topic, with aye/no totals and the id to drill into a
+          full party breakdown.</div>
       </div>
 
       <div class="group-label">Detailed lookups</div>
