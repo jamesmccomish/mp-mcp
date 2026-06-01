@@ -66,6 +66,7 @@ export function TopBar({
           className={styles.keypip}
           onClick={onForgetKey}
           title={keyPresent ? 'Forget key' : 'No key set'}
+          aria-label={keyPresent ? 'Forget API key' : 'No API key set'}
         >
           <span className={`${styles.dot} ${keyPresent ? '' : styles.dotOff}`} />
           Key

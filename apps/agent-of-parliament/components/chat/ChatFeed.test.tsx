@@ -43,6 +43,22 @@ describe('ChatFeed', () => {
     expect(screen.getByText('Claude')).toBeInTheDocument();
   });
 
+  it('shows the streaming caret on the last assistant turn while streaming', () => {
+    const { container } = render(
+      <ChatFeed
+        history={[{ role: 'assistant', content: 'Loading…' }]}
+        streaming={true}
+        toolTrace={[]}
+        samplePrompts={[]}
+        input=""
+        onInput={noop}
+        onSubmit={noop}
+        onPromptClick={noop}
+      />,
+    );
+    expect(container.querySelector('span[class*="caret"]')).toBeTruthy();
+  });
+
   it('fires onPromptClick when a chip is clicked', () => {
     const onPromptClick = vi.fn();
     render(

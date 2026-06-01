@@ -97,6 +97,7 @@ export function ChatFeed({
             onChange={(e) => onInput(e.target.value)}
             placeholder="Ask about an MP, a vote, a debate…"
             disabled={streaming}
+            aria-label="Your question"
           />
           <button type="submit" className={styles.ask} disabled={streaming || !input.trim()}>
             Ask →
