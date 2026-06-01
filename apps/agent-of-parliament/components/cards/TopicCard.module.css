@@ -27,7 +27,7 @@
   border-top: 1px solid var(--rule);
   padding: 8px 0;
 }
-.row:first-of-type {
+.group + .row {
   border-top: none;
 }
 .title {
