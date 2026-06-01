@@ -15,8 +15,8 @@ export interface ConstituencyHighlight {
   sublabel?: string;
 }
 
-const BASE_FILL = '#dfe4e8';
-const BASE_STROKE = '#ffffff';
+const BASE_FILL = 'var(--ground)';
+const BASE_STROKE = 'var(--rule)';
 
 export function ConstituencyMap({ highlights }: { highlights: ConstituencyHighlight[] }) {
   // Resolve once: fill colour by normalized name (for the SVG) and matched/unmatched
@@ -60,8 +60,8 @@ export function ConstituencyMap({ highlights }: { highlights: ConstituencyHighli
               key={s.cd}
               d={s.d}
               fill={fill ?? BASE_FILL}
-              stroke={fill ? '#26231a' : BASE_STROKE}
-              strokeWidth={fill ? 2 : 0.5}
+              stroke={fill ? 'var(--green)' : BASE_STROKE}
+              strokeWidth={fill ? 1.5 : 0.5}
             />
           );
         })}
@@ -81,7 +81,7 @@ export function ConstituencyMap({ highlights }: { highlights: ConstituencyHighli
 
       <div style={{ flex: 1, minWidth: 0, overflowY: 'auto', fontSize: 13 }}>
         {matched.length === 0 && unmatched.length === 0 ? (
-          <p style={{ color: '#9a9484', margin: 0 }}>
+          <p style={{ color: 'var(--muted)', margin: 0 }}>
             Constituencies you ask about light up here as the agent finds them.
           </p>
         ) : (
@@ -100,14 +100,14 @@ export function ConstituencyMap({ highlights }: { highlights: ConstituencyHighli
                     flexShrink: 0,
                   }}
                 />
-                <span style={{ color: '#26231a' }}>
+                <span style={{ color: 'var(--ink)' }}>
                   {h.name}
-                  {h.sublabel && <span style={{ color: '#9a9484' }}> · {h.sublabel}</span>}
+                  {h.sublabel && <span style={{ color: 'var(--muted)' }}> · {h.sublabel}</span>}
                 </span>
               </div>
             ))}
             {unmatched.map((h) => (
-              <div key={h.name} style={{ color: '#9a9484', margin: '4px 0' }}>
+              <div key={h.name} style={{ color: 'var(--muted)', margin: '4px 0' }}>
                 {h.name} <span style={{ fontStyle: 'italic' }}>· not on map</span>
               </div>
             ))}
