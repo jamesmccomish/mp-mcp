@@ -10,7 +10,7 @@ import type { AgentEvent, CardKind } from '@/lib/agent/events';
 import { highlightsFromCards } from '@/lib/agent/highlights';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
 import type { Citation } from 'mp-mcp/types';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? '';
@@ -73,6 +73,10 @@ export default function Page() {
     clearKey();
     setKeyPresent(false);
   }
+
+  const toggleMap = useCallback(() => setMapOpen((v) => !v), []);
+  const closeMap = useCallback(() => setMapOpen(false), []);
+  const togglePlainEnglish = useCallback(() => setPlainEnglish((v) => !v), []);
 
   async function ask(question: string) {
     const apiKey = getKey();
@@ -161,20 +165,20 @@ export default function Page() {
 
   return (
     <main className={`${styles.app} paper-noise`}>
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div className={styles.topbar}>
         <TopBar
           keyPresent={keyPresent}
           mapBadge={mapHighlights.length}
           mapOpen={mapOpen}
-          onToggleMap={() => setMapOpen((v) => !v)}
+          onToggleMap={toggleMap}
           plainEnglish={plainEnglish}
-          onTogglePlainEnglish={() => setPlainEnglish((v) => !v)}
+          onTogglePlainEnglish={togglePlainEnglish}
           onForgetKey={forgetKey}
         />
-        <MapPopover open={mapOpen} onClose={() => setMapOpen(false)} highlights={mapHighlights} />
+        <MapPopover open={mapOpen} onClose={closeMap} highlights={mapHighlights} />
       </div>
 
-      <div className={styles.main} style={{ position: 'relative', zIndex: 1 }}>
+      <div className={styles.main}>
         <ChatFeed
           history={history}
           streaming={streaming}

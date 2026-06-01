@@ -5,11 +5,17 @@
   border-top: 3px solid var(--green);
   overflow: hidden;
 }
+.topbar {
+  position: relative;
+  z-index: 1;
+}
 .main {
   flex: 1;
   display: grid;
   grid-template-columns: 390px 1fr;
   min-height: 0;
+  position: relative;
+  z-index: 1;
 }
 .canvas {
   position: relative;
@@ -76,7 +82,7 @@
   border-radius: var(--radius);
   padding: 11px 12px;
 }
-.gateInput:focus {
+.gateInput:focus-visible {
   outline: none;
   border-color: var(--ink);
 }
