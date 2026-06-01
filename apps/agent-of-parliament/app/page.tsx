@@ -2,13 +2,16 @@
 
 import { CardView } from '@/components/cards/CardView';
 import { partyColour } from '@/components/cards/format';
-import { ConstituencyMap } from '@/components/map/ConstituencyMap';
+import { ChatFeed } from '@/components/chat/ChatFeed';
+import { MapPopover } from '@/components/chrome/MapPopover';
+import { TopBar } from '@/components/chrome/TopBar';
 import { type ChatTurn, runAgentTurn } from '@/lib/agent/connector';
 import type { AgentEvent, CardKind } from '@/lib/agent/events';
 import { highlightsFromCards } from '@/lib/agent/highlights';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
 import type { Citation } from 'mp-mcp/types';
-import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import styles from './page.module.css';
 
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? '';
 
@@ -42,6 +45,8 @@ export default function Page() {
   const [cards, setCards] = useState<RawCard[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [toolTrace, setToolTrace] = useState<string[]>([]);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [plainEnglish, setPlainEnglish] = useState(false);
   const cardSeq = useRef(0);
 
   const mapHighlights = useMemo(
@@ -120,161 +125,83 @@ export default function Page() {
     }
   }
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    void ask(input);
-  }
-
   if (!keyPresent) {
     return (
-      <main
-        style={{ maxWidth: 520, margin: '15vh auto', padding: '0 24px', fontFamily: 'system-ui' }}
-      >
-        <h1>Agent of Parliament</h1>
-        <p>
-          Ask UK Parliament questions in plain English and watch cited cards assemble. This runs on
-          your own Anthropic key — paste it once and it stays in your browser tab.
-        </p>
-        <input
-          type="password"
-          value={keyDraft}
-          onChange={(e) => setKeyDraft(e.target.value)}
-          placeholder="sk-ant-..."
-          style={{ width: '100%', padding: 10, fontSize: 16 }}
-        />
-        <button
-          type="button"
-          onClick={saveKey}
-          disabled={!keyDraft.trim()}
-          style={{ marginTop: 12, padding: '10px 16px' }}
-        >
-          Save key and start
-        </button>
+      <main className={styles.gate}>
+        <div className={styles.gateCard}>
+          <div className="mono-label" style={{ fontSize: 10, color: 'var(--gilt)' }}>
+            Agent of Parliament
+          </div>
+          <h1 className={styles.gateTitle}>Ask Parliament a question.</h1>
+          <p className={styles.gateBody}>
+            Ask UK Parliament questions in plain English and watch cited cards assemble. This runs
+            on your own Anthropic key — paste it once, it stays in your browser.
+          </p>
+          <input
+            type="password"
+            value={keyDraft}
+            onChange={(e) => setKeyDraft(e.target.value)}
+            placeholder="sk-ant-…"
+            className={styles.gateInput}
+          />
+          <div>
+            <button
+              type="button"
+              onClick={saveKey}
+              disabled={!keyDraft.trim()}
+              className={styles.gateButton}
+            >
+              Save key and start
+            </button>
+          </div>
+        </div>
       </main>
     );
   }
 
   return (
-    <main
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        height: '100vh',
-        fontFamily: 'system-ui',
-      }}
-    >
-      <section
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          borderRight: '1px solid #ddd',
-          padding: 16,
-          overflow: 'hidden',
-        }}
-      >
-        <header
-          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}
-        >
-          <strong>Agent of Parliament</strong>
-          <button type="button" onClick={forgetKey} style={{ fontSize: 12 }}>
-            Forget key
-          </button>
-        </header>
+    <main className={`${styles.app} paper-noise`}>
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <TopBar
+          keyPresent={keyPresent}
+          mapBadge={mapHighlights.length}
+          mapOpen={mapOpen}
+          onToggleMap={() => setMapOpen((v) => !v)}
+          plainEnglish={plainEnglish}
+          onTogglePlainEnglish={() => setPlainEnglish((v) => !v)}
+          onForgetKey={forgetKey}
+        />
+        <MapPopover open={mapOpen} onClose={() => setMapOpen(false)} highlights={mapHighlights} />
+      </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', margin: '12px 0' }}>
-          {history.length === 0 ? (
-            <div>
-              <p style={{ color: '#666' }}>Try one of these:</p>
-              {SAMPLE_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => void ask(p)}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    margin: '6px 0',
-                    padding: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          ) : (
-            history.map((turn, i) => (
-              <div key={`${turn.role}-${i}`} style={{ margin: '12px 0' }}>
-                <div style={{ fontSize: 12, color: '#888' }}>{turn.role}</div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>
-                  {turn.content || (streaming ? '…' : '')}
-                </div>
-              </div>
-            ))
-          )}
-          {toolTrace.length > 0 && (
-            <div style={{ fontSize: 12, color: '#999' }}>tools: {toolTrace.join(' → ')}</div>
-          )}
-        </div>
+      <div className={styles.main} style={{ position: 'relative', zIndex: 1 }}>
+        <ChatFeed
+          history={history}
+          streaming={streaming}
+          toolTrace={toolTrace}
+          samplePrompts={SAMPLE_PROMPTS}
+          input={input}
+          onInput={setInput}
+          onSubmit={() => void ask(input)}
+          onPromptClick={(p) => void ask(p)}
+        />
 
-        <form onSubmit={onSubmit} style={{ display: 'flex', gap: 8 }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about an MP, a vote, a debate…"
-            disabled={streaming}
-            style={{ flex: 1, padding: 10 }}
-          />
-          <button
-            type="submit"
-            disabled={streaming || !input.trim()}
-            style={{ padding: '10px 16px' }}
-          >
-            {streaming ? '…' : 'Ask'}
-          </button>
-        </form>
-      </section>
-
-      <section
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#fafafa',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            height: '38vh',
-            minHeight: 240,
-            padding: 16,
-            borderBottom: '1px solid #ddd',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#4a4636' }}>Constituencies</div>
-          <div style={{ flex: 1, minHeight: 0 }}>
-            <ConstituencyMap highlights={mapHighlights} />
+        <div className={styles.canvas}>
+          <div className={styles.cards}>
+            {cards.length === 0 ? (
+              <p className={styles.placeholder}>Cards will appear here as the agent finds data.</p>
+            ) : (
+              cards.map((card) => (
+                <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
+              ))
+            )}
           </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-          {cards.length === 0 ? (
-            <p style={{ color: '#999' }}>Cards will appear here as the agent finds data.</p>
-          ) : (
-            cards.map((card) => (
-              <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
-            ))
-          )}
-          <footer style={{ fontSize: 11, color: '#999', marginTop: 24 }}>
+          <footer className={styles.footer}>
             Contains Parliamentary information licensed under the Open Parliament Licence v3.0.
             Constituency boundaries: ONS / OS, Open Government Licence v3.0.
           </footer>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

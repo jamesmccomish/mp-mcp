@@ -1,0 +1,112 @@
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-top: 3px solid var(--green);
+  overflow: hidden;
+}
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 390px 1fr;
+  min-height: 0;
+}
+.canvas {
+  position: relative;
+  overflow-y: auto;
+  padding: 22px 26px 0;
+}
+.cards {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.placeholder {
+  color: var(--muted);
+  font-size: 15px;
+  margin-top: 8px;
+}
+.footer {
+  max-width: 680px;
+  margin: 22px auto;
+  padding: 16px 0 26px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Key gate */
+.gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.gateCard {
+  max-width: 520px;
+  width: 100%;
+  background: var(--paper);
+  border-top: 3px solid var(--green);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 40px 44px 36px;
+}
+.gateTitle {
+  font-family: var(--display);
+  font-size: 34px;
+  margin: 14px 0 10px;
+}
+.gateBody {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 20px;
+}
+.gateInput {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 14px;
+  background: #fbf8f0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 11px 12px;
+}
+.gateInput:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.gateButton {
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f3efe4;
+  background: var(--green);
+  border: none;
+  border-radius: 999px;
+  padding: 11px 18px;
+  cursor: pointer;
+}
+.gateButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+@media (max-width: 860px) {
+  .app {
+    height: auto;
+    min-height: 100vh;
+  }
+  .main {
+    grid-template-columns: 1fr;
+  }
+  .canvas {
+    padding: 16px;
+  }
+}
