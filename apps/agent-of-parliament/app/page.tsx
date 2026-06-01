@@ -1,11 +1,14 @@
 'use client';
 
 import { CardView } from '@/components/cards/CardView';
+import { partyColour } from '@/components/cards/format';
+import { ConstituencyMap } from '@/components/map/ConstituencyMap';
 import { type ChatTurn, runAgentTurn } from '@/lib/agent/connector';
 import type { AgentEvent, CardKind } from '@/lib/agent/events';
+import { highlightsFromCards } from '@/lib/agent/highlights';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
 import type { Citation } from 'mp-mcp/types';
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? '';
 
@@ -40,6 +43,16 @@ export default function Page() {
   const [streaming, setStreaming] = useState(false);
   const [toolTrace, setToolTrace] = useState<string[]>([]);
   const cardSeq = useRef(0);
+
+  const mapHighlights = useMemo(
+    () =>
+      highlightsFromCards(cards).map((ref) => ({
+        name: ref.name,
+        colour: partyColour(ref.party),
+        sublabel: ref.party,
+      })),
+    [cards],
+  );
 
   useEffect(() => {
     setKeyPresent(getKey() !== null);
@@ -223,17 +236,44 @@ export default function Page() {
         </form>
       </section>
 
-      <section style={{ padding: 16, overflowY: 'auto', background: '#fafafa' }}>
-        {cards.length === 0 ? (
-          <p style={{ color: '#999' }}>Cards will appear here as the agent finds data.</p>
-        ) : (
-          cards.map((card) => (
-            <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
-          ))
-        )}
-        <footer style={{ fontSize: 11, color: '#999', marginTop: 24 }}>
-          Contains Parliamentary information licensed under the Open Parliament Licence v3.0.
-        </footer>
+      <section
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#fafafa',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            height: '38vh',
+            minHeight: 240,
+            padding: 16,
+            borderBottom: '1px solid #ddd',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#4a4636' }}>Constituencies</div>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <ConstituencyMap highlights={mapHighlights} />
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+          {cards.length === 0 ? (
+            <p style={{ color: '#999' }}>Cards will appear here as the agent finds data.</p>
+          ) : (
+            cards.map((card) => (
+              <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
+            ))
+          )}
+          <footer style={{ fontSize: 11, color: '#999', marginTop: 24 }}>
+            Contains Parliamentary information licensed under the Open Parliament Licence v3.0.
+            Constituency boundaries: ONS / OS, Open Government Licence v3.0.
+          </footer>
+        </div>
       </section>
     </main>
   );
