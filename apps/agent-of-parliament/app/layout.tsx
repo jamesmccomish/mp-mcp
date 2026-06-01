@@ -22,9 +22,23 @@ const mono = IBM_Plex_Mono({
   variable: '--font-mono',
 });
 
+const description = 'Ask UK Parliament questions in plain English and watch cited cards assemble.';
+
 export const metadata: Metadata = {
   title: 'Agent of Parliament',
-  description: 'Ask UK Parliament questions in plain English and watch cited cards assemble.',
+  description,
+  openGraph: {
+    title: 'Agent of Parliament',
+    description,
+    type: 'website',
+    images: [{ url: '/og/agent-of-parliament.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Agent of Parliament',
+    description,
+    images: ['/og/agent-of-parliament.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
