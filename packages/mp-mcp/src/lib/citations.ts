@@ -87,6 +87,20 @@ export const Citations = {
       url: `https://questions-statements.parliament.uk/written-questions/detail/${uin}`,
     };
   },
+
+  stateOfParties(house: House): Citation {
+    return {
+      title: `State of the parties — ${house}`,
+      url: `${MEMBERS_BASE}/parties/${house === 'Commons' ? 'commons' : 'lords'}`,
+    };
+  },
+
+  ministerialRoles(branch: 'government' | 'opposition'): Citation {
+    return {
+      title: branch === 'opposition' ? 'Opposition front bench' : 'Her Majesty\u2019s Government',
+      url: `${MEMBERS_BASE}/${branch === 'opposition' ? 'OppositionFrontBench' : 'Government'}`,
+    };
+  },
 };
 
 function slugify(input: string): string {

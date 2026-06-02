@@ -1,12 +1,15 @@
 import { z } from 'zod';
 import { getMemberVoting } from '../clients/commonsVotes.js';
-import { type HouseId, type RawVotingItem, getVoting } from '../clients/members.js';
+import { getLordsMemberVoting } from '../clients/lordsVotes.js';
 import type { ToolResponse, ToolResponseMeta } from '../domain/citation.js';
 import type { MemberVote } from '../domain/vote.js';
 import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
-import { mapVoteFromMemberVotingRecord, mapVoteFromRaw } from './_voteMapper.js';
+import {
+  mapVoteFromLordsMemberVotingRecord,
+  mapVoteFromMemberVotingRecord,
+} from './_voteMapper.js';
 
 export const MemberVotingHistoryInputSchema = z.object({
   member_id: z.number().int().positive().describe('Numeric member id from parliament_find_member.'),
@@ -107,53 +110,31 @@ async function loadCommons(
   return { fullVotes: records.map(mapVoteFromMemberVotingRecord), upstreamCalls: 1 };
 }
 
-// Lords: the Members API /Voting endpoint has no server-side topic/date filter,
-// so page a recency-capped window and filter in memory. (Lords reroute to the
-// symmetric Lords Votes endpoints is a follow-up.)
+// Lords: the Lords Votes membervoting endpoint filters by topic and date
+// server-side (symmetric with Commons) and returns the peer's lobby per
+// division directly — no recency-capped paging or in-memory filtering needed.
 async function loadLords(
   input: MemberVotingHistoryInput,
 ): Promise<{ fullVotes: MemberVote[]; upstreamCalls: number }> {
-  const house: HouseId = 2;
-  const pageSize = 100;
-  const cap = Math.min(input.limit * 4, 500);
-
-  const collected: RawVotingItem[] = [];
-  for (let skip = 0; skip < cap; skip += pageSize) {
-    const page = await getVoting(input.member_id, { house, take: pageSize, skip });
-    if (page.length === 0) break;
-    collected.push(...page);
-    if (collected.length >= cap) break;
-  }
-
-  const filtered = applyFilters(collected, input).slice(0, input.limit);
-  return {
-    fullVotes: filtered.map(mapVoteFromRaw),
-    upstreamCalls: Math.max(1, Math.ceil(collected.length / pageSize)),
-  };
+  const records = await getLordsMemberVoting({
+    memberId: input.member_id,
+    searchTerm: input.topic,
+    startDate: input.from_date,
+    endDate: input.to_date,
+    includeWhenMemberWasTeller: true,
+    take: input.limit,
+  });
+  return { fullVotes: records.map(mapVoteFromLordsMemberVotingRecord), upstreamCalls: 1 };
 }
 
 function conciseVote(v: MemberVote): MemberVoteConcise {
   return { house: v.house, title: v.title, date: v.date, vote: v.vote, passed: v.passed };
 }
 
-function applyFilters(items: RawVotingItem[], input: MemberVotingHistoryInput): RawVotingItem[] {
-  const topic = input.topic?.toLowerCase().trim();
-  const from = input.from_date ? new Date(input.from_date).getTime() : Number.NEGATIVE_INFINITY;
-  const to = input.to_date ? new Date(input.to_date).getTime() : Number.POSITIVE_INFINITY;
-
-  return items.filter((v) => {
-    const ts = new Date(v.date).getTime();
-    if (Number.isFinite(from) && ts < from) return false;
-    if (Number.isFinite(to) && ts > to) return false;
-    if (topic && !v.title.toLowerCase().includes(topic)) return false;
-    return true;
-  });
-}
-
 export const memberVotingHistoryToolDefinition = {
   name: 'parliament_member_voting_history',
   description: [
-    "One MP's voting record over time, optionally filtered by topic keyword and date range. Returns how that member voted (aye/no/teller) per division plus the aggregate aye/no counts. Commons records are filtered server-side; an empty result is a truthful answer (the member abstained/was absent, or the term was too specific), not an error.",
+    "One member's voting record over time, optionally filtered by topic keyword and date range. Returns how that member voted (aye/no/teller; Lords content/not-content is surfaced as aye/no) per division plus the aggregate counts. Both Commons and Lords records are filtered server-side; an empty result is a truthful answer (the member abstained/was absent, or the term was too specific), not an error.",
     '',
     'Good for: "how has Diane Abbott voted on climate?", "Keir Starmer\'s rebellions against his own party", "votes by member 172 in 2025".',
     '',
@@ -161,7 +142,6 @@ export const memberVotingHistoryToolDefinition = {
     '',
     'Inputs: member_id (required, resolve via parliament_find_member), topic (literal substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20), response_format (concise|detailed; detailed adds division_id/number and aye/no counts for chaining to parliament_get_division).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberVotingHistoryInputSchema,

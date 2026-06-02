@@ -1,8 +1,9 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { RawMemberVotingRecord } from '../../src/clients/commonsVotes.js';
+import type { RawLordsMemberVotingRecord } from '../../src/clients/lordsVotes.js';
 import { memberVotingHistory } from '../../src/tools/memberVotingHistory.js';
-import { MEMBER_VOTING_RECORDS, VOTING_PAGE, votingEnvelope } from '../fixtures/voting.js';
+import { LORDS_MEMBER_VOTING_RECORDS, MEMBER_VOTING_RECORDS } from '../fixtures/voting.js';
 
 let mockAgent: MockAgent;
 
@@ -146,38 +147,65 @@ describe('memberVotingHistory (commons via membervoting)', () => {
   });
 });
 
-describe('memberVotingHistory (lords legacy Members-API path)', () => {
-  function stubVoting(memberId: number, pages: (typeof VOTING_PAGE)[]) {
-    const pool = mockAgent.get('https://members-api.parliament.uk');
-    for (const page of pages) {
-      pool
-        .intercept({ path: new RegExp(`/api/Members/${memberId}/Voting`), method: 'GET' })
-        .reply(200, votingEnvelope(page), JSON_HDR);
-    }
+describe('memberVotingHistory (lords via Lords Votes membervoting)', () => {
+  function stubLordsMemberVoting(records: RawLordsMemberVotingRecord[]): {
+    lastPath: () => string;
+  } {
+    let path = '';
+    mockAgent
+      .get('https://lordsvotes-api.parliament.uk')
+      .intercept({ path: /\/data\/Divisions\/membervoting/, method: 'GET' })
+      .reply(
+        200,
+        (opts) => {
+          path = opts.path;
+          return records;
+        },
+        JSON_HDR,
+      )
+      .times(1);
+    return { lastPath: () => path };
   }
 
-  it('pages the Members API and filters by topic in memory', async () => {
-    stubVoting(172, [VOTING_PAGE, []]);
+  it('maps content/not-content to aye/no in a single server-side call', async () => {
+    stubLordsMemberVoting(LORDS_MEMBER_VOTING_RECORDS);
+
     const result = await memberVotingHistory({
-      member_id: 172,
-      topic: 'climate',
+      member_id: 3899,
       assembly: 'lords',
       limit: 10,
-      response_format: 'concise',
+      response_format: 'detailed',
     });
-    expect(result.data.votes).toHaveLength(1);
-    expect(result.data.votes[0]?.title).toContain('Climate Change');
+
+    expect(result.meta?.upstream_calls).toBe(1);
+    expect(result.data.votes[0]).toMatchObject({
+      house: 'Lords',
+      vote: 'aye',
+      title: 'Climate and Nature Bill: Committee Stage',
+    });
+    expect(result.data.votes[1]).toMatchObject({ house: 'Lords', vote: 'no' });
+    expect(result.sources[0]?.url).toMatch(/Lords\/Division\/2950$/);
   });
 
-  it('respects date filters', async () => {
-    stubVoting(172, [VOTING_PAGE, []]);
-    const result = await memberVotingHistory({
-      member_id: 172,
+  it('sends topic and dates as server-side filters', async () => {
+    const stub = stubLordsMemberVoting([
+      LORDS_MEMBER_VOTING_RECORDS[0] as RawLordsMemberVotingRecord,
+    ]);
+
+    await memberVotingHistory({
+      member_id: 3899,
+      topic: 'Climate',
       from_date: '2025-01-01',
+      to_date: '2025-12-31',
       assembly: 'lords',
       limit: 10,
       response_format: 'concise',
     });
-    expect(result.data.votes.every((v) => v.date >= '2025-01-01')).toBe(true);
+
+    const q = new URLSearchParams(stub.lastPath().split('?')[1] ?? '');
+    expect(q.get('MemberId')).toBe('3899');
+    expect(q.get('SearchTerm')).toBe('Climate');
+    expect(q.get('StartDate')).toBe('2025-01-01');
+    expect(q.get('EndDate')).toBe('2025-12-31');
   });
 });

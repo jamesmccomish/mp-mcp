@@ -37,4 +37,38 @@ export async function searchBills(params: BillSearchParams): Promise<RawBill[]> 
   return envelope.items ?? [];
 }
 
+export type RawSponsor = {
+  member?: { memberId?: number; name?: string | null; party?: string | null } | null;
+  organisation?: { name?: string | null; url?: string | null } | null;
+  sortOrder?: number;
+};
+
+export type RawBillDetail = RawBill & {
+  longTitle: string | null;
+  summary: string | null;
+  sponsors: RawSponsor[] | null;
+};
+
+export async function getBill(billId: number): Promise<RawBillDetail> {
+  return getJson<RawBillDetail>(`${BASE}/Bills/${billId}`);
+}
+
+export type RawBillStage = {
+  id: number;
+  stageId: number;
+  description: string | null;
+  abbreviation: string | null;
+  house: string | null;
+  stageSittings: Array<{ date: string | null }> | null;
+  sortOrder: number;
+};
+
+export async function getBillStages(billId: number, take = 30): Promise<RawBillStage[]> {
+  const envelope = await getJson<{ items?: RawBillStage[]; totalResults?: number }>(
+    `${BASE}/Bills/${billId}/Stages`,
+    { query: { Take: take, Skip: 0 } },
+  );
+  return envelope.items ?? [];
+}
+
 export const __testing__ = { BASE };

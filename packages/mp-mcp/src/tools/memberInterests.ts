@@ -47,11 +47,19 @@ export type MemberInterestsData = {
 export async function memberInterests(
   input: MemberInterestsInput,
 ): Promise<ToolResponse<MemberInterestsData>> {
+  const detailed = input.response_format === 'detailed';
+  // The interests API can only filter by a category's internal id, not the
+  // human-facing number (e.g. "1.1"), so category_number is applied in memory.
+  // Widen the upstream fetch when a category filter is set so the post-filter
+  // slice can still fill `limit` instead of silently under-returning.
+  const fetchTake = input.category_number
+    ? Math.min(Math.max(input.limit * 5, 50), 100)
+    : input.limit;
   const raw = await searchInterests({
     memberId: input.member_id,
     publishedSince: input.from_date,
-    take: input.limit,
-    expandChildren: input.response_format === 'detailed',
+    take: fetchTake,
+    expandChildren: detailed,
   });
 
   if (raw.length === 0) {
@@ -75,13 +83,17 @@ export async function memberInterests(
       registered_on: r.registrationDate,
       published_on: r.publishedDate,
     };
-    if (input.response_format === 'detailed') {
+    if (detailed) {
       entry.fields = r.fields.map((f) => ({ name: f.name, value: f.value }));
     }
     return entry;
   });
 
-  const sources: Citation[] = [Citations.member(input.member_id, `Member ${input.member_id}`)];
+  // Resolve the member's real name from the payload (no extra upstream call).
+  const memberName = raw.find((r) => r.member)?.member?.nameDisplayAs;
+  const sources: Citation[] = [
+    Citations.member(input.member_id, memberName ?? `Member ${input.member_id}`),
+  ];
 
   return buildResponse({ member_id: input.member_id, entries }, sources, { upstream_calls: 1 });
 }
@@ -99,7 +111,6 @@ export const memberInterestsToolDefinition = {
     '',
     'Inputs: member_id (required), category_number (e.g. "1.1"), from_date (ISO-8601), limit (1–50, default 20), response_format (concise|detailed; detailed includes typed fields).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberInterestsInputSchema,

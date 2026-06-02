@@ -29,8 +29,13 @@ describe('highlightsFromCards', () => {
   });
 
   it('dedupes by normalized name, keeping the first', () => {
-    const cards = [mpCard('Holborn and St Pancras', 'Labour'), mpCard('holborn  and st pancras', 'Labour')];
-    expect(highlightsFromCards(cards)).toEqual([{ name: 'Holborn and St Pancras', party: 'Labour' }]);
+    const cards = [
+      mpCard('Holborn and St Pancras', 'Labour'),
+      mpCard('holborn  and st pancras', 'Labour'),
+    ];
+    expect(highlightsFromCards(cards)).toEqual([
+      { name: 'Holborn and St Pancras', party: 'Labour' },
+    ]);
   });
 
   it('skips members with no constituency', () => {

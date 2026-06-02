@@ -14,6 +14,14 @@ export type MemberVote = {
   passed: boolean;
 };
 
+export type DivisionRebellion = {
+  member_id: number;
+  name: string;
+  party: string;
+  voted: 'aye' | 'no';
+  party_majority: 'aye' | 'no';
+};
+
 export type DivisionDetail = {
   id: number;
   house: House;
@@ -27,4 +35,5 @@ export type DivisionDetail = {
   noes_by_party: Record<string, number>;
   ayes_members?: Array<{ id: number; name: string; party: string }>;
   noes_members?: Array<{ id: number; name: string; party: string }>;
+  rebellions?: DivisionRebellion[];
 };

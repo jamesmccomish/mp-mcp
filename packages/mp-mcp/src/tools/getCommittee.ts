@@ -142,7 +142,6 @@ export const getCommitteeToolDefinition = {
     '',
     "Inputs: one of committee_id (preferred) or name (substring match), include_evidence (default false), response_format (concise|detailed; detailed adds the committee category, start/end dates, and each member's seat and chair flag).",
     '',
-    'This response includes a `sources` array of committees.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetCommitteeInputSchema,

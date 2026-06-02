@@ -10,8 +10,8 @@
 // The generated asset is committed so normal builds need no network.
 
 import { writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SOURCE_URL =
   'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Westminster_Parliamentary_Constituencies_July_2024_Boundaries_UK_BUC/FeatureServer/0/query?where=1%3D1&outFields=PCON24CD,PCON24NM&outSR=4326&f=geojson';
@@ -41,10 +41,10 @@ async function main() {
   console.error(`Got ${features.length} features.`);
 
   // Pass 1: projected bounds across every point.
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
   for (const f of features) {
     for (const ring of ringsOf(f.geometry)) {
       for (const [lon, lat] of ring) {
@@ -154,7 +154,9 @@ ${body}
 
   writeFileSync(OUT, out);
   const kb = Math.round(Buffer.byteLength(out) / 1024);
-  console.error(`Wrote ${records.length} shapes to ${OUT} (${kb} KB), viewBox 0 0 ${VIEW_WIDTH} ${viewHeight}.`);
+  console.error(
+    `Wrote ${records.length} shapes to ${OUT} (${kb} KB), viewBox 0 0 ${VIEW_WIDTH} ${viewHeight}.`,
+  );
 }
 
 main().catch((err) => {

@@ -70,8 +70,6 @@ export type TopicTrackerData = {
   }>;
 };
 
-const MAX_INTERNAL_CALLS = 12;
-
 export async function topicTracker(
   input: TopicTrackerInput,
 ): Promise<ToolResponse<TopicTrackerData>> {
@@ -156,12 +154,9 @@ export async function topicTracker(
   };
 
   const sources = buildSources(bills, debates, votes, topPetitions);
-  const upstreamCalls = 5;
-  return buildResponse(data, sources, {
-    upstream_calls: upstreamCalls,
-    truncated: false,
-    truncation_hint: upstreamCalls >= MAX_INTERNAL_CALLS ? 'Internal fan-out hit cap.' : undefined,
-  });
+  // Fixed fan-out: five parallel upstream searches (bills, debates, divisions,
+  // written questions, petitions).
+  return buildResponse(data, sources, { upstream_calls: 5 });
 }
 
 function unwrap<T>(settled: PromiseSettledResult<T>): T | null {
@@ -217,7 +212,6 @@ export const topicTrackerToolDefinition = {
     '',
     'Inputs: topic (short noun phrase, required), lookback_days (1–365, default 90; note: division results are not date-windowed and are most-recent-first), response_format (concise|detailed; recent_votes always carries division_id; detailed adds further chaining IDs — debate_ext_id, division number, question uin — plus secondary fields, and widens question excerpts from 200 to 400 characters).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: TopicTrackerInputSchema,

@@ -103,7 +103,6 @@ export const searchDivisionsToolDefinition = {
     '',
     'Inputs: topic (required; literal title substring), from_date / to_date (ISO-8601, optional — omit to search all dates), limit (1–20, default 10), response_format (concise|detailed; detailed adds the division number).',
     '',
-    'This response includes a `sources` array of votes.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when nothing matched it sets a `truncation_hint` on how to broaden the search.',
   ].join('\n'),
   inputSchema: SearchDivisionsInputSchema,

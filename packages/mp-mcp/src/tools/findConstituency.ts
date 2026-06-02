@@ -76,7 +76,6 @@ export const findConstituencyToolDefinition = {
     '',
     'Inputs: query (constituency name | postcode), response_format (concise|detailed; detailed adds the constituency id and start/end dates).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: FindConstituencyInputSchema,

@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import {
-  type HouseId,
-  type MemberSearchParams,
-  type RawMember,
-  searchMembers,
-} from '../clients/members.js';
+import { type HouseId, type MemberSearchParams, searchMembers } from '../clients/members.js';
 import { isPostcode, lookupPostcode } from '../clients/postcodes.js';
 import type { ToolResponse } from '../domain/citation.js';
 import { memberDetailed, memberSummary } from '../domain/mappers.js';
@@ -12,7 +7,7 @@ import type { MemberDetailed, MemberSummary } from '../domain/member.js';
 import { collectSources } from '../lib/buildSources.js';
 import { Citations } from '../lib/citations.js';
 import { ParliamentToolError } from '../lib/errors.js';
-import { ResponseFormatSchema, buildResponse, shape } from '../lib/responseFormat.js';
+import { ResponseFormatSchema, buildResponse } from '../lib/responseFormat.js';
 
 export const FindMemberInputSchema = z.object({
   query: z
@@ -96,21 +91,6 @@ function assemblyToHouseId(assembly: FindMemberInput['assembly']): HouseId | und
   return undefined;
 }
 
-// Concise vs detailed only affects which mapper runs. The shape() helper isn't
-// needed since findMember decides per-match, not per-response. Re-export for
-// other callers that want the same projection.
-export const findMemberShapes = {
-  concise: (raw: RawMember) => memberSummary(raw),
-  detailed: (raw: RawMember) => memberDetailed(raw),
-};
-
-export function projectMember(
-  raw: RawMember,
-  format: 'concise' | 'detailed',
-): MemberSummary | MemberDetailed {
-  return shape(raw, format, findMemberShapes);
-}
-
 export const findMemberToolDefinition = {
   name: 'parliament_find_member',
   description: [
@@ -123,7 +103,6 @@ export const findMemberToolDefinition = {
     '',
     'Inputs: query (name | constituency | postcode), assembly (commons|lords|both, default commons), current_only (default true), response_format (concise|detailed, default concise).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: FindMemberInputSchema,

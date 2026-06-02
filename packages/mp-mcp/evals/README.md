@@ -1,14 +1,18 @@
 # mp-mcp evals
 
-A 20-task seed eval set that exercises the MCP end-to-end through a real
-Claude API call. Categories:
+An append-only eval set that exercises the MCP end-to-end through a real
+Claude API call. It grows as tools and steering evolve (see ADR-0004) — there
+is no fixed task count. Categories:
 
-- **A. Postcode → MP report card** (5 tasks)
-- **B. Topic-filtered voting** (5 tasks)
-- **C. Topic tracking** (5 tasks)
-- **D. Trap prompts the agent should NOT call the MCP for** (5 tasks)
+- **postcode-report** — Postcode/name → MP report card
+- **voting** — Divisions and per-member voting records (incl. Lords, rebellions)
+- **topic** — Cross-Parliament topic tracking and bill drill-ins
+- **reference** — Structural lookups (parties, ministers, elections)
+- **trap** — Prompts the agent should NOT call the MCP for
 
-The full list is in [`tasks.ts`](./tasks.ts).
+The full list is in [`tasks.ts`](./tasks.ts). When you add a tool or refine
+steering, add at least one task in the matching category; `tests/unit/evalTasks.test.ts`
+checks integrity (unique ids, known categories, every task verifiable), not a count.
 
 ## Running
 
@@ -29,6 +33,28 @@ markdown report to `evals/reports/<YYYY-MM-DD>.md` summarising:
 - Tokens consumed
 - Per-tool call frequency and error rate
 - Per-task pass/fail with the model's final response inline
+
+## Token-spend benchmark
+
+`evals/benchmark.ts` runs a curated subset of tasks through two arms and reports
+the full token spend (input + output, 0 to finish) of each, so you can quantify
+what the MCP costs:
+
+- **with MCP** — the agent with the mp-mcp tools (in-memory server).
+- **baseline** — the agent with web search but no MCP (set
+  `MP_MCP_BENCH_BASELINE=none` for a no-tools baseline instead).
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... pnpm --filter mp-mcp bench          # curated subset
+ANTHROPIC_API_KEY=sk-ant-... pnpm --filter mp-mcp bench A2 C1     # specific task ids
+```
+
+It writes `evals/reports/benchmark-<YYYY-MM-DD>.md` with per-task token totals,
+the MCP-vs-baseline delta and ratio, and an LLM-as-judge accuracy verdict per arm
+(so a cheap-but-wrong baseline is visible). Note: web searches are billed per
+request separately from tokens, so they are reported as their own column and not
+folded into the token totals. Like the eval set, this costs real tokens — run it
+on demand, not in CI.
 
 ## How verification works
 

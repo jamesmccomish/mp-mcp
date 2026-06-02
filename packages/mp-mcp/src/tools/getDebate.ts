@@ -165,7 +165,6 @@ export const getDebateToolDefinition = {
     '',
     "Inputs: one of debate_ext_id (GUID) or hansard_url (full hansard.parliament.uk link), response_format (concise|detailed; detailed adds each contribution's member_id and Hansard item type).",
     '',
-    'This response includes a `sources` array of hansard.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetDebateInputSchema,

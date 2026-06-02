@@ -10,7 +10,7 @@ This directory configures Claude Code for working in this repo. Everything here 
 
 - **`commands/new-adr.md`** — `/new-adr <slug>` appends the next-numbered ADR to `docs/adrs/` using the template.
 
-- **`agents/tool-description-reviewer.md`** — read-only sub-agent that critiques MCP tool descriptions against Anthropic's principles plus this project's citation contract. Spawn it when iterating on descriptions during M7 (eval + tuning) or any time a tool isn't being selected correctly.
+- **`agents/tool-description-reviewer.md`** — read-only sub-agent that critiques MCP tool descriptions against Anthropic's principles plus this project's citation contract. Spawn it when iterating on tool descriptions, or any time a tool isn't being selected correctly.
 
 ## Conventions
 

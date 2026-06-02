@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
@@ -26,8 +26,8 @@ type TaskResult = {
   duration_ms: number;
 };
 
-const MODEL = process.env.MP_MCP_EVAL_MODEL ?? 'claude-opus-4-7';
-const JUDGE_MODEL = process.env.MP_MCP_JUDGE_MODEL ?? 'claude-haiku-4-5-20251001';
+export const MODEL = process.env.MP_MCP_EVAL_MODEL ?? 'claude-opus-4-7';
+export const JUDGE_MODEL = process.env.MP_MCP_JUDGE_MODEL ?? 'claude-haiku-4-5-20251001';
 const MAX_TOOL_TURNS = 8;
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPORTS_DIR = resolve(HERE, 'reports');
@@ -52,6 +52,9 @@ async function main(): Promise<void> {
     description: t.description ?? '',
     input_schema: t.inputSchema as Anthropic.Tool['input_schema'],
   }));
+  // Mirror real MCP clients: surface the server instructions (which carry the
+  // citation contract) as the system prompt.
+  const instructions = mcpClient.getInstructions();
 
   const filter = process.argv[2];
   const tasks = filter ? TASKS.filter((t) => t.id === filter || t.category === filter) : TASKS;
@@ -60,7 +63,7 @@ async function main(): Promise<void> {
   for (const task of tasks) {
     process.stderr.write(`[eval] ${task.id} ${task.category} ...\n`);
     try {
-      const result = await runOne(anthropic, mcpClient, anthropicTools, task);
+      const result = await runOne(anthropic, mcpClient, anthropicTools, task, instructions);
       await grade(anthropic, task, result);
       results.push(result);
       process.stderr.write(
@@ -87,6 +90,7 @@ async function runOne(
   mcp: Client,
   tools: Anthropic.Tool[],
   task: EvalTask,
+  instructions?: string,
 ): Promise<TaskResult> {
   const start = Date.now();
   const calls: ToolCallRecord[] = [];
@@ -101,6 +105,7 @@ async function runOne(
       max_tokens: 4096,
       tools,
       messages,
+      ...(instructions ? { system: instructions } : {}),
     });
     inputTokens += response.usage.input_tokens;
     outputTokens += response.usage.output_tokens;
@@ -208,16 +213,27 @@ async function llmAsJudge(
   task: EvalTask,
   result: TaskResult,
 ): Promise<{ verdict: 'pass' | 'fail'; reasoning: string }> {
+  return judgeAnswer(anthropic, task.prompt, task.judge?.criteria ?? '', result.final_text);
+}
+
+// Primitive-based judge so other harnesses (e.g. the benchmark) can reuse it
+// without constructing a full TaskResult.
+export async function judgeAnswer(
+  anthropic: Anthropic,
+  prompt: string,
+  criteria: string,
+  finalText: string,
+): Promise<{ verdict: 'pass' | 'fail'; reasoning: string }> {
   const judgePrompt = `\
 You are grading an agent's response to a user question. The user asked:
 
-  ${task.prompt}
+  ${prompt}
 
 The agent answered:
 
-  ${result.final_text.slice(0, 4000)}
+  ${finalText.slice(0, 4000)}
 
-The pass criteria: ${task.judge?.criteria}
+The pass criteria: ${criteria}
 
 Reply with exactly one of:
   PASS — <one-sentence reason>
@@ -236,7 +252,7 @@ Reply with exactly one of:
   return { verdict, reasoning: text.trim().slice(0, 200) };
 }
 
-function safeParse(text: string): unknown {
+export function safeParse(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch {
@@ -301,7 +317,14 @@ ${r.final_text || '_(empty)_'}
 `;
 }
 
-main().catch((error: unknown) => {
-  process.stderr.write(`[eval] fatal: ${String(error)}\n`);
-  process.exit(1);
-});
+// Only run when executed directly (`tsx evals/runner.ts`), not when imported
+// by another harness (e.g. evals/benchmark.ts reuses the judge helpers).
+const invokedDirectly =
+  Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1] as string).href;
+
+if (invokedDirectly) {
+  main().catch((error: unknown) => {
+    process.stderr.write(`[eval] fatal: ${String(error)}\n`);
+    process.exit(1);
+  });
+}

@@ -1,6 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getDivision } from '../../src/tools/getDivision.js';
+import { LORDS_DIVISION_DETAIL } from '../fixtures/voting.js';
 
 let mockAgent: MockAgent;
 
@@ -48,6 +49,7 @@ describe('getDivision', () => {
     const result = await getDivision({
       division_id: 2347,
       assembly: 'commons',
+      include_rebellions: false,
       response_format: 'concise',
     });
 
@@ -67,6 +69,7 @@ describe('getDivision', () => {
     const result = await getDivision({
       division_id: 2347,
       assembly: 'commons',
+      include_rebellions: false,
       response_format: 'detailed',
     });
 
@@ -74,9 +77,76 @@ describe('getDivision', () => {
     expect(result.data.noes_members).toHaveLength(2);
   });
 
-  it('rejects Lords with a steering message (v1 scope)', async () => {
-    await expect(
-      getDivision({ division_id: 1, assembly: 'lords', response_format: 'concise' }),
-    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  it('flags members who voted against their party majority when include_rebellions', async () => {
+    // Labour majority is "no" (2 no vs 1 aye), so the lone Labour aye is a rebel.
+    const REBELLION_DETAIL = {
+      ...DIVISION_DETAIL,
+      Ayes: [
+        {
+          MemberId: 1,
+          Name: 'Alice A',
+          Party: 'Conservative',
+          SubParty: null,
+          MemberIsTeller: false,
+        },
+        { MemberId: 20, Name: 'Rebel R', Party: 'Labour', SubParty: null, MemberIsTeller: false },
+      ],
+      Noes: [
+        { MemberId: 10, Name: 'Dave D', Party: 'Labour', SubParty: null, MemberIsTeller: false },
+        { MemberId: 11, Name: 'Eve E', Party: 'Labour', SubParty: null, MemberIsTeller: false },
+      ],
+    };
+    mockAgent
+      .get('https://commonsvotes-api.parliament.uk')
+      .intercept({ path: '/data/division/2347.json', method: 'GET' })
+      .reply(200, REBELLION_DETAIL, JSON_HDR);
+
+    const result = await getDivision({
+      division_id: 2347,
+      assembly: 'commons',
+      include_rebellions: true,
+      response_format: 'concise',
+    });
+
+    expect(result.data.rebellions).toEqual([
+      { member_id: 20, name: 'Rebel R', party: 'Labour', voted: 'aye', party_majority: 'no' },
+    ]);
+  });
+
+  it('omits rebellions by default', async () => {
+    mockAgent
+      .get('https://commonsvotes-api.parliament.uk')
+      .intercept({ path: '/data/division/2347.json', method: 'GET' })
+      .reply(200, DIVISION_DETAIL, JSON_HDR);
+
+    const result = await getDivision({
+      division_id: 2347,
+      assembly: 'commons',
+      include_rebellions: false,
+      response_format: 'concise',
+    });
+    expect(result.data.rebellions).toBeUndefined();
+  });
+
+  it('fetches a Lords division, mapping content/not-content to ayes/noes', async () => {
+    mockAgent
+      .get('https://lordsvotes-api.parliament.uk')
+      .intercept({ path: '/data/Divisions/2950', method: 'GET' })
+      .reply(200, LORDS_DIVISION_DETAIL, JSON_HDR);
+
+    const result = await getDivision({
+      division_id: 2950,
+      assembly: 'lords',
+      include_rebellions: false,
+      response_format: 'detailed',
+    });
+
+    expect(result.data.house).toBe('Lords');
+    expect(result.data.ayes).toBe(3);
+    expect(result.data.noes).toBe(2);
+    expect(result.data.ayes_by_party).toEqual({ Labour: 2, Crossbench: 1 });
+    expect(result.data.noes_by_party).toEqual({ Conservative: 2 });
+    expect(result.data.ayes_members).toHaveLength(3);
+    expect(result.sources[0]?.url).toContain('/Votes/Lords/Division/2950');
   });
 });
