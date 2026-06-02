@@ -56,6 +56,7 @@
     "test:watch": "vitest",
     "gen:types": "tsx scripts/gen-types.ts",
     "eval": "tsx evals/runner.ts",
+    "bench": "tsx evals/benchmark.ts",
     "start": "node dist/stdio.js"
   },
   "dependencies": {
