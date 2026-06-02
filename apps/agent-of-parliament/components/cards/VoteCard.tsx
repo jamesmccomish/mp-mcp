@@ -1,6 +1,6 @@
 import { adaptVote } from '@/lib/agent/adapters/vote';
 import type { VoteViewModel } from '@/lib/agent/adapters/vote';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { CardShell } from './CardShell';
 import { DivisionLobbyBar } from './DivisionLobbyBar';
 import styles from './VoteCard.module.css';

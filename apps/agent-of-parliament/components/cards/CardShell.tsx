@@ -1,4 +1,4 @@
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import type { ReactNode } from 'react';
 import styles from './CardShell.module.css';
 

@@ -1,4 +1,4 @@
-import type { ToolResponse, TopicTrackerData } from 'mp-mcp/types';
+import type { ToolResponse, TopicTrackerData } from '@jamesmccomish/mp-mcp/types';
 
 // Representative parliament_topic_tracker(detailed) capture for "NHS waiting lists":
 // one bill plus one enacted Act, two debates across both Houses, two divisions,

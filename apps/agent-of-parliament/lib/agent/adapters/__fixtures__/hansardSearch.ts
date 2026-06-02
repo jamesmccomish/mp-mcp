@@ -1,4 +1,4 @@
-import type { SearchHansardData, ToolResponse } from 'mp-mcp/types';
+import type { SearchHansardData, ToolResponse } from '@jamesmccomish/mp-mcp/types';
 
 // Real capture: parliament_search_hansard("Ukraine", section=debates, detailed),
 // 2026-05-31 — captured BEFORE the Hansard search-term fix, so the hits and the

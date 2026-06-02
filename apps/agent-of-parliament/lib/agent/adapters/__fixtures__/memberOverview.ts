@@ -1,4 +1,4 @@
-import type { MemberOverviewData, ToolResponse } from 'mp-mcp/types';
+import type { MemberOverviewData, ToolResponse } from '@jamesmccomish/mp-mcp/types';
 
 // Real capture: parliament_member_overview(member_id 4444, detailed) — Karin Smyth,
 // MP for Bristol South (postcode BS3 4QH, the "good first demo"). Exercises the

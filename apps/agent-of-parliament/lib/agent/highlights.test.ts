@@ -1,4 +1,4 @@
-import type { MemberOverviewData } from 'mp-mcp/types';
+import type { MemberOverviewData } from '@jamesmccomish/mp-mcp/types';
 import { describe, expect, it } from 'vitest';
 import { memberOverviewFixture } from './adapters/__fixtures__/memberOverview';
 import { highlightsFromCards } from './highlights';

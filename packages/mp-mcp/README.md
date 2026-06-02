@@ -1,8 +1,8 @@
 # mp-mcp
 
-[![npm version](https://img.shields.io/npm/v/mp-mcp.svg)](https://www.npmjs.com/package/mp-mcp)
+[![npm version](https://img.shields.io/npm/v/@jamesmccomish/mp-mcp.svg)](https://www.npmjs.com/package/@jamesmccomish/mp-mcp)
 [![CI](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/node/v/mp-mcp.svg)](https://www.npmjs.com/package/mp-mcp)
+[![Node](https://img.shields.io/node/v/@jamesmccomish/mp-mcp.svg)](https://www.npmjs.com/package/@jamesmccomish/mp-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
 
 **A Model Context Protocol (MCP) server that makes UK Parliament data agent-friendly — intent-led tools, citation-first responses.**
@@ -14,7 +14,7 @@
 Add to Claude Code:
 
 ```bash
-claude mcp add mp-mcp -- npx -y mp-mcp
+claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp
 ```
 
 Or configure any MCP client that speaks stdio:
@@ -24,7 +24,7 @@ Or configure any MCP client that speaks stdio:
   "mcpServers": {
     "mp-mcp": {
       "command": "npx",
-      "args": ["-y", "mp-mcp"]
+      "args": ["-y", "@jamesmccomish/mp-mcp"]
     }
   }
 }
@@ -132,9 +132,9 @@ TypeScript API types in `src/generated/` are produced from Parliament's OpenAPI 
 
 ```bash
 pnpm install
-pnpm --filter mp-mcp build      # one-off compile to dist/
-pnpm --filter mp-mcp dev        # incremental tsc --watch into dist/
-pnpm --filter mp-mcp test       # vitest
+pnpm --filter @jamesmccomish/mp-mcp build      # one-off compile to dist/
+pnpm --filter @jamesmccomish/mp-mcp dev        # incremental tsc --watch into dist/
+pnpm --filter @jamesmccomish/mp-mcp test       # vitest
 ```
 
 Once built, the repo's [`.claude/settings.json`](../../.claude/settings.json) registers the local artifact in Claude Code under the `mp-mcp-local` name. With `dev` running, edits recompile on save; restart the MCP client to pick up the new `dist/`.
@@ -144,13 +144,13 @@ Once built, the repo's [`.claude/settings.json`](../../.claude/settings.json) re
 Drive the server directly, without a full client session:
 
 ```bash
-pnpm --filter mp-mcp build
+pnpm --filter @jamesmccomish/mp-mcp build
 npx @modelcontextprotocol/inspector node packages/mp-mcp/dist/stdio.js
 ```
 
 ### Generated types
 
-`src/generated/` is committed (so installs need no network) and generated from Parliament's OpenAPI specs. Regenerate with `pnpm --filter mp-mcp gen:types`; never hand-edit those files.
+`src/generated/` is committed (so installs need no network) and generated from Parliament's OpenAPI specs. Regenerate with `pnpm --filter @jamesmccomish/mp-mcp gen:types`; never hand-edit those files.
 
 ## Configuration
 

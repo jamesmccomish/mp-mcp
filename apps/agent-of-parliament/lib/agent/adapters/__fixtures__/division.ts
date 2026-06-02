@@ -1,4 +1,4 @@
-import type { GetDivisionData, ToolResponse } from 'mp-mcp/types';
+import type { GetDivisionData, ToolResponse } from '@jamesmccomish/mp-mcp/types';
 
 // Real capture: parliament_get_division(2347, concise) — "Privilege", a rejected
 // Commons division (223 ayes / 335 noes) with a cross-party aye lobby against a

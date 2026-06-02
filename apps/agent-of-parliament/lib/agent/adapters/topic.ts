@@ -1,4 +1,4 @@
-import type { Citation, House, TopicTrackerData } from 'mp-mcp/types';
+import type { Citation, House, TopicTrackerData } from '@jamesmccomish/mp-mcp/types';
 
 export interface TopicBill {
   id: number;

@@ -1,5 +1,5 @@
 import type { BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages/messages';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { cardKindForTool } from './cardRegistry';
 import type { AgentEvent } from './events';
 

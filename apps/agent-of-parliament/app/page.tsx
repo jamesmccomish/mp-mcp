@@ -9,7 +9,7 @@ import { type ChatTurn, runAgentTurn } from '@/lib/agent/connector';
 import type { AgentEvent, CardKind } from '@/lib/agent/events';
 import { highlightsFromCards } from '@/lib/agent/highlights';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 

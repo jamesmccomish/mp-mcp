@@ -5,7 +5,7 @@ import type {
   MemberOverviewData,
   MemberStatus,
   Vote,
-} from 'mp-mcp/types';
+} from '@jamesmccomish/mp-mcp/types';
 import { plainText } from './html';
 
 export interface MpVote {

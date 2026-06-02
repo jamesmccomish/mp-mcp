@@ -1,4 +1,4 @@
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 
 export type CardKind = 'mp' | 'vote' | 'debate' | 'topic';
 

@@ -1,5 +1,5 @@
 import { normalizeConstituency } from '@/lib/map/geo';
-import type { MemberOverviewData } from 'mp-mcp/types';
+import type { MemberOverviewData } from '@jamesmccomish/mp-mcp/types';
 import type { CardKind } from './events';
 
 export interface ConstituencyRef {
