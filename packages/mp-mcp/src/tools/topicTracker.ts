@@ -70,8 +70,6 @@ export type TopicTrackerData = {
   }>;
 };
 
-const MAX_INTERNAL_CALLS = 12;
-
 export async function topicTracker(
   input: TopicTrackerInput,
 ): Promise<ToolResponse<TopicTrackerData>> {
@@ -156,12 +154,9 @@ export async function topicTracker(
   };
 
   const sources = buildSources(bills, debates, votes, topPetitions);
-  const upstreamCalls = 5;
-  return buildResponse(data, sources, {
-    upstream_calls: upstreamCalls,
-    truncated: false,
-    truncation_hint: upstreamCalls >= MAX_INTERNAL_CALLS ? 'Internal fan-out hit cap.' : undefined,
-  });
+  // Fixed fan-out: five parallel upstream searches (bills, debates, divisions,
+  // written questions, petitions).
+  return buildResponse(data, sources, { upstream_calls: 5 });
 }
 
 function unwrap<T>(settled: PromiseSettledResult<T>): T | null {
