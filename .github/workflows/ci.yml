@@ -31,6 +31,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # Apps import the built `mp-mcp` package (resolved via its dist/ exports),
+      # so the packages must be built before the apps typecheck can resolve them.
+      - name: Build packages
+        run: pnpm build
+
       - name: Typecheck apps
         run: pnpm -r --filter=./apps/* typecheck
 
