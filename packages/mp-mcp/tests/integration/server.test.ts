@@ -30,12 +30,6 @@ describe('mp-mcp server (in-memory)', () => {
     expect(instructions).toMatch(/Open Parliament Licence/);
   });
 
-  it('lists parliament_ping among its tools', async () => {
-    const { tools } = await client.listTools();
-    const names = tools.map((t) => t.name);
-    expect(names).toContain('parliament_ping');
-  });
-
   it('registers Tier 1 tools with intent-led names', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
@@ -61,7 +55,6 @@ describe('mp-mcp server (in-memory)', () => {
         'parliament_member_interests',
         'parliament_member_overview',
         'parliament_member_voting_history',
-        'parliament_ping',
         'parliament_search_divisions',
         'parliament_search_hansard',
         'parliament_topic_tracker',
@@ -87,12 +80,5 @@ describe('mp-mcp server (in-memory)', () => {
     expect(first?.role).toBe('user');
     expect((first?.content as { text: string }).text).toContain('parliament_find_member');
     expect((first?.content as { text: string }).text).toContain('SW1A 0AA');
-  });
-
-  it('returns the canned response for parliament_ping', async () => {
-    const result = await client.callTool({ name: 'parliament_ping', arguments: {} });
-    const content = result.content as Array<{ type: string; text: string }>;
-    expect(content[0]?.type).toBe('text');
-    expect(JSON.parse(content[0]?.text ?? '')).toEqual({ ok: true, sources: [] });
   });
 });

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Model Context Protocol server for agents to use UK Parliament data.",
   "keywords": [
+    "ai",
     "mcp",
     "model-context-protocol",
     "parliament",
@@ -12,7 +13,7 @@
   ],
   "author": "James McComish (https://github.com/jamesmccomish)",
   "license": "MIT",
-  "homepage": "https://github.com/jamesmccomish/mp-mcp",
+  "homepage": "https://mp-mcp.org",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jamesmccomish/mp-mcp.git",

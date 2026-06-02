@@ -14,7 +14,6 @@ export type {
 export type { Vote, MemberVote, DivisionDetail } from './domain/vote.js';
 export type { HansardHit, DebateContribution, DebateDetail } from './domain/debate.js';
 export type { Interest } from './domain/interest.js';
-export type { PingResponse } from './tools/ping.js';
 export type { FindMemberData } from './tools/findMember.js';
 export type { FindConstituencyData } from './tools/findConstituency.js';
 export type { MemberOverviewData } from './tools/memberOverview.js';

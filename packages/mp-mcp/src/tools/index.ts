@@ -12,22 +12,11 @@ import { getStateOfPartiesToolDefinition } from './getStateOfParties.js';
 import { memberInterestsToolDefinition } from './memberInterests.js';
 import { memberOverviewToolDefinition } from './memberOverview.js';
 import { memberVotingHistoryToolDefinition } from './memberVotingHistory.js';
-import { pingToolDefinition } from './ping.js';
 import { searchDivisionsToolDefinition } from './searchDivisions.js';
 import { searchHansardToolDefinition } from './searchHansard.js';
 import { topicTrackerToolDefinition } from './topicTracker.js';
 
 export function registerTools(server: McpServer): void {
-  server.tool(
-    pingToolDefinition.name,
-    pingToolDefinition.description,
-    pingToolDefinition.inputSchema.shape,
-    async () => {
-      const result = pingToolDefinition.handler({});
-      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
-    },
-  );
-
   registerTool(server, findMemberToolDefinition);
   registerTool(server, findConstituencyToolDefinition);
   registerTool(server, memberOverviewToolDefinition);
