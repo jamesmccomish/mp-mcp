@@ -2,6 +2,7 @@ import type { CardKind } from '@/lib/agent/events';
 import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { CardShell } from './CardShell';
 import { DebateCard } from './DebateCard';
+import { MemberCard } from './MemberCard';
 import { MpCard } from './MpCard';
 import { TopicCard } from './TopicCard';
 import { VoteCard } from './VoteCard';
@@ -17,6 +18,7 @@ export function CardView({
   data: unknown;
   sources: Citation[];
 }) {
+  if (kind === 'member') return <MemberCard data={data} sources={sources} />;
   if (kind === 'mp') return <MpCard data={data} sources={sources} />;
   if (kind === 'vote') return <VoteCard data={data} sources={sources} />;
   if (kind === 'debate') return <DebateCard data={data} sources={sources} />;

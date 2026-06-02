@@ -5,11 +5,12 @@ import { partyColour } from '@/components/cards/format';
 import { ChatFeed } from '@/components/chat/ChatFeed';
 import { MapPopover } from '@/components/chrome/MapPopover';
 import { TopBar } from '@/components/chrome/TopBar';
+import { memberIdsFromFindResult } from '@/lib/agent/adapters/member';
 import { type ChatTurn, runAgentTurn } from '@/lib/agent/connector';
 import type { AgentEvent, CardKind } from '@/lib/agent/events';
 import { highlightsFromCards } from '@/lib/agent/highlights';
 import { clearKey, getKey, setKey } from '@/lib/key/keyVault';
-import type { Citation } from '@jamesmccomish/mp-mcp/types';
+import type { Citation, MemberOverviewData } from '@jamesmccomish/mp-mcp/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 
@@ -48,6 +49,22 @@ export default function Page() {
   const [mapOpen, setMapOpen] = useState(false);
   const [plainEnglish, setPlainEnglish] = useState(false);
   const cardSeq = useRef(0);
+
+  // A lightweight member card is superseded once a detailed MP card resolves the
+  // same member, so drop it to avoid two cards for one person.
+  const visibleCards = useMemo(() => {
+    const overviewIds = new Set<number>();
+    for (const card of cards) {
+      if (card.kind !== 'mp') continue;
+      const id = (card.data as MemberOverviewData | undefined)?.member?.id;
+      if (typeof id === 'number') overviewIds.add(id);
+    }
+    return cards.filter((card) => {
+      if (card.kind !== 'member') return true;
+      const ids = memberIdsFromFindResult(card.data);
+      return ids.length === 0 || !ids.every((id) => overviewIds.has(id));
+    });
+  }, [cards]);
 
   const mapHighlights = useMemo(
     () =>
@@ -192,10 +209,10 @@ export default function Page() {
 
         <div className={styles.canvas}>
           <div className={styles.cards}>
-            {cards.length === 0 ? (
+            {visibleCards.length === 0 ? (
               <p className={styles.placeholder}>Cards will appear here as the agent finds data.</p>
             ) : (
-              cards.map((card) => (
+              visibleCards.map((card) => (
                 <CardView key={card.id} kind={card.kind} data={card.data} sources={card.sources} />
               ))
             )}

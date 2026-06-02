@@ -1,6 +1,6 @@
 import type { Citation } from '@jamesmccomish/mp-mcp/types';
 
-export type CardKind = 'mp' | 'vote' | 'debate' | 'topic';
+export type CardKind = 'member' | 'mp' | 'vote' | 'debate' | 'topic';
 
 export type AgentEvent =
   | { type: 'text'; delta: string }

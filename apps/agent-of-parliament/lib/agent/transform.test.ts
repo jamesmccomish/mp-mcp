@@ -105,15 +105,33 @@ describe('transform', () => {
     expect(out.some((e) => e.type === 'card')).toBe(false);
   });
 
-  it('does not emit a card for an unmapped (id-resolving) tool', async () => {
-    const envelope = JSON.stringify({ data: { memberId: 172 }, sources: [] });
+  it('emits a member card for parliament_find_member', async () => {
+    const envelope = JSON.stringify({
+      data: { matches: [{ id: 172, name: 'Diane Abbott' }], query_kind: 'postcode' },
+      sources: [{ title: 'Members API', url: 'https://members.parliament.uk/member/172' }],
+    });
     const out = await collect([
       toolUse('tu_4', 'parliament_find_member'),
       toolResult('tu_4', envelope),
       STOP,
     ]);
+    expect(out).toContainEqual({
+      type: 'card',
+      kind: 'member',
+      data: { matches: [{ id: 172, name: 'Diane Abbott' }], query_kind: 'postcode' },
+      sources: [{ title: 'Members API', url: 'https://members.parliament.uk/member/172' }],
+    });
+  });
+
+  it('does not emit a card for an unmapped (id-resolving) tool', async () => {
+    const envelope = JSON.stringify({ data: { id: 99 }, sources: [] });
+    const out = await collect([
+      toolUse('tu_4b', 'parliament_find_constituency'),
+      toolResult('tu_4b', envelope),
+      STOP,
+    ]);
     expect(out).toEqual([
-      { type: 'tool_start', id: 'tu_4', name: 'parliament_find_member' },
+      { type: 'tool_start', id: 'tu_4b', name: 'parliament_find_constituency' },
       { type: 'done' },
     ]);
   });
