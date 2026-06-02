@@ -203,7 +203,11 @@ describe('topicTracker', () => {
     const unrelated = {
       ...PETITION,
       id: 9,
-      attributes: { ...PETITION.attributes, action: 'Dissolve Parliament', background: 'Call an election.' },
+      attributes: {
+        ...PETITION.attributes,
+        action: 'Dissolve Parliament',
+        background: 'Call an election.',
+      },
     };
     mockAgent
       .get('https://bills-api.parliament.uk')

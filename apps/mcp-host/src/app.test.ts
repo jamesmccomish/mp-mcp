@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { app } from './app.js';
 
 const TOOL_NAMES = [
-  'parliament_ping',
   'parliament_find_member',
   'parliament_find_constituency',
   'parliament_member_overview',
@@ -15,6 +14,10 @@ const TOOL_NAMES = [
   'parliament_get_division',
   'parliament_member_interests',
   'parliament_get_committee',
+  'parliament_get_bill',
+  'parliament_get_state_of_parties',
+  'parliament_get_ministerial_roles',
+  'parliament_get_election_results',
 ];
 
 function mcpRequest(body: unknown): Request {
@@ -67,7 +70,7 @@ describe('mcp-host', () => {
     expect(json.status).toBe('ok');
   });
 
-  it('tools/list returns all 12 tools', async () => {
+  it('tools/list returns all 15 tools', async () => {
     const res = await app.fetch(
       mcpRequest({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }),
     );
@@ -76,7 +79,7 @@ describe('mcp-host', () => {
       result: { tools: Array<{ name: string }> };
     };
     const names = parsed.result.tools.map((t) => t.name);
-    expect(names).toHaveLength(12);
+    expect(names).toHaveLength(15);
     expect(names).toEqual(expect.arrayContaining(TOOL_NAMES));
   });
 
@@ -100,18 +103,14 @@ describe('mcp-host', () => {
 });
 
 describe('tool calls', () => {
-  it('parliament_ping returns ok (no network)', async () => {
-    const res = await app.fetch(
-      mcpRequest({ jsonrpc: '2.0', id: 10, method: 'tools/call', params: { name: 'parliament_ping', arguments: {} } }),
-    );
-    expect(res.status).toBe(200);
-    const parsed = (await parseSse(res)) as { result: { content: unknown[] } };
-    expect(parsed.result.content.length).toBeGreaterThan(0);
-  });
-
   it('parliament_find_member returns results (live API)', async () => {
     const res = await app.fetch(
-      mcpRequest({ jsonrpc: '2.0', id: 11, method: 'tools/call', params: { name: 'parliament_find_member', arguments: { query: 'Keir Starmer' } } }),
+      mcpRequest({
+        jsonrpc: '2.0',
+        id: 11,
+        method: 'tools/call',
+        params: { name: 'parliament_find_member', arguments: { query: 'Keir Starmer' } },
+      }),
     );
     expect(res.status).toBe(200);
     const parsed = (await parseSse(res)) as { result: { content: unknown[] } };

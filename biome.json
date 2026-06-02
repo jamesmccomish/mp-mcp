@@ -7,7 +7,16 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["**/dist/**", "**/node_modules/**", "**/generated/**", "**/coverage/**", "**/*.md"]
+    "ignore": [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/generated/**",
+      "**/*.generated.ts",
+      "**/coverage/**",
+      "**/*.md",
+      "**/.claude/**",
+      "**/.next/**"
+    ]
   },
   "organizeImports": {
     "enabled": true

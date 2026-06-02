@@ -29,11 +29,20 @@
     "eval": "pnpm --filter mp-mcp eval",
     "changeset": "changeset",
     "changeset:version": "changeset version",
-    "changeset:publish": "pnpm build && changeset publish"
+    "changeset:publish": "pnpm build && changeset publish",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,jsonc}": "biome check --write --no-errors-on-unmatched"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.27.10",
+    "lint-staged": "^17.0.7",
+    "simple-git-hooks": "^2.13.1",
     "typescript": "^5.6.3"
   },
   "pnpm": {

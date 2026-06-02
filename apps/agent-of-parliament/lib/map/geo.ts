@@ -1,4 +1,8 @@
-import { type ConstituencyShape, CONSTITUENCY_SHAPES, MAP_VIEWBOX } from './constituencies.generated';
+import {
+  CONSTITUENCY_SHAPES,
+  type ConstituencyShape,
+  MAP_VIEWBOX,
+} from './constituencies.generated';
 
 export { type ConstituencyShape, CONSTITUENCY_SHAPES, MAP_VIEWBOX };
 
@@ -9,7 +13,7 @@ export { type ConstituencyShape, CONSTITUENCY_SHAPES, MAP_VIEWBOX };
 export function normalizeConstituency(name: string): string {
   return name
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // strip diacritics
+    .replace(/\p{Diacritic}/gu, '') // strip combining diacritics
     .toLowerCase()
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, ' ')

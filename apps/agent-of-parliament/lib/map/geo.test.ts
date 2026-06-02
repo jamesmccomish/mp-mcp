@@ -14,7 +14,7 @@ describe('normalizeConstituency', () => {
     expect(normalizeConstituency('Argyll, Bute and South Lochaber')).toBe(
       'argyll bute and south lochaber',
     );
-    expect(normalizeConstituency("Na h-Eileanan an Iar")).toBe('na h eileanan an iar');
+    expect(normalizeConstituency('Na h-Eileanan an Iar')).toBe('na h eileanan an iar');
   });
 
   it('treats & and "and" the same', () => {
