@@ -1,5 +1,5 @@
 {
-  "name": "mp-mcp",
+  "name": "@jamesmccomish/mp-mcp",
   "version": "0.1.0",
   "description": "Model Context Protocol server for agents to use UK Parliament data.",
   "keywords": [
@@ -46,6 +46,9 @@
     "mp-mcp": "dist/stdio.js"
   },
   "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm clean && tsc -p tsconfig.build.json",

@@ -296,6 +296,14 @@
       user-select: none;
     }
 
+    .cmd-block {
+      margin: 0;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: 1.5;
+      white-space: pre;
+    }
+
     .copy {
       position: absolute;
       top: 9px;
@@ -610,8 +618,15 @@
     <section class="install">
       <h2 class="sec-head">To Take Your Seat</h2>
       <p class="lede">Add the server to any MCP-capable client:</p>
-      <div class="cmd"><span class="prompt">$ </span><span id="cmd-text">claude mcp add mp-mcp -- npx -y
-          mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+      <div class="cmd"><span class="prompt">$ </span><span class="cmd-text">claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+      <div class="cmd"><pre class="cmd-text cmd-block">{
+  "mcpServers": {
+    "mp-mcp": {
+      "command": "npx",
+      "args": ["-y", "@jamesmccomish/mp-mcp"]
+    }
+  }
+}</pre><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
       <p class="lede">Read the full technical documentation on <a href="https://github.com/jamesmccomish/mp-mcp"
           target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
     </section>
@@ -627,8 +642,8 @@
             rel="noopener noreferrer">GitHub</a></li>
         <li><span class="k">Example app</span><a href="https://agentofparliament.org" target="_blank"
             rel="noopener noreferrer">Agent Of Parliament</a></li>
-        <li><span class="k">Package</span><a href="https://www.npmjs.com/package/mp-mcp" target="_blank"
-            rel="noopener noreferrer">mp-mcp</a>
+        <li><span class="k">Package</span><a href="https://www.npmjs.com/package/@jamesmccomish/mp-mcp" target="_blank"
+            rel="noopener noreferrer">@jamesmccomish/mp-mcp</a>
         </li>
         <li><span class="k">Data Licence</span><a
             href="https://www.parliament.uk/site-information/copyright-parliament/open-parliament-licence/"
@@ -651,13 +666,17 @@
   </main>
 
   <script>
-    document.querySelector(".copy")?.addEventListener("click", (event) => {
-      const button = event.currentTarget;
-      if (!navigator.clipboard) return;
-      navigator.clipboard.writeText(document.getElementById("cmd-text").textContent).then(() => {
-        button.textContent = "Copied";
-        setTimeout(() => { button.textContent = "Copy"; }, 1400);
-      }).catch(() => { });
+    document.querySelectorAll(".copy").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const button = event.currentTarget;
+        if (!navigator.clipboard) return;
+        const text = button.closest(".cmd")?.querySelector(".cmd-text")?.textContent;
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+          button.textContent = "Copied";
+          setTimeout(() => { button.textContent = "Copy"; }, 1400);
+        }).catch(() => { });
+      });
     });
   </script>
 </body>

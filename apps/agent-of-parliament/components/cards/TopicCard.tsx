@@ -1,6 +1,6 @@
 import { adaptTopic } from '@/lib/agent/adapters/topic';
 import type { TopicViewModel } from '@/lib/agent/adapters/topic';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import type { ReactNode } from 'react';
 import { CardShell } from './CardShell';
 import { DivisionLobbyBar } from './DivisionLobbyBar';

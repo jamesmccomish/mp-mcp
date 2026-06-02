@@ -1,5 +1,5 @@
 import type { CardKind } from '@/lib/agent/events';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { CardShell } from './CardShell';
 import { DebateCard } from './DebateCard';
 import { MpCard } from './MpCard';

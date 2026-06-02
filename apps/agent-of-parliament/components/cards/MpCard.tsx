@@ -1,5 +1,5 @@
 import { adaptMp } from '@/lib/agent/adapters/mp';
-import type { Citation, Vote } from 'mp-mcp/types';
+import type { Citation, Vote } from '@jamesmccomish/mp-mcp/types';
 import type { ReactNode } from 'react';
 import { CardShell } from './CardShell';
 import styles from './MpCard.module.css';

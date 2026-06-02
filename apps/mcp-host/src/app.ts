@@ -1,6 +1,6 @@
+import { createServer } from '@jamesmccomish/mp-mcp';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { Hono } from 'hono';
-import { createServer } from 'mp-mcp';
 
 // Hono app shared by the dev server (src/index.ts), the Vercel function
 // (api/index.ts), and the test suite. One app, exercised identically everywhere.

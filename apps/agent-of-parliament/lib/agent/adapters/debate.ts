@@ -1,4 +1,9 @@
-import type { Citation, GetDebateData, House, SearchHansardData } from 'mp-mcp/types';
+import type {
+  Citation,
+  GetDebateData,
+  House,
+  SearchHansardData,
+} from '@jamesmccomish/mp-mcp/types';
 import { plainText } from './html';
 
 export interface DebateHit {

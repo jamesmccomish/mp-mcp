@@ -1,7 +1,7 @@
 # Agent of Parliament
 
 [![CI](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/mp-mcp.svg?label=mp-mcp)](https://www.npmjs.com/package/mp-mcp)
+[![npm](https://img.shields.io/npm/v/@jamesmccomish/mp-mcp.svg?label=@jamesmccomish/mp-mcp)](https://www.npmjs.com/package/@jamesmccomish/mp-mcp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![data: OPL v3.0](https://img.shields.io/badge/data-OPL%20v3.0-00603c.svg)](https://www.parliament.uk/site-information/copyright-parliament/open-parliament-licence/)
 

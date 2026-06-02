@@ -1,4 +1,4 @@
-import type { GetDebateData, ToolResponse } from 'mp-mcp/types';
+import type { GetDebateData, ToolResponse } from '@jamesmccomish/mp-mcp/types';
 
 // Real capture: parliament_get_debate("42E18377-...", concise) — "NHS Management",
 // a six-contribution Commons oral-questions exchange. Concise mode projects each

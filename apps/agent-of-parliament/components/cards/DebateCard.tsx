@@ -8,7 +8,7 @@ import type {
 } from '@/lib/agent/adapters/debate';
 import { toPlainEnglish } from '@/lib/agent/plainEnglish';
 import { getKey } from '@/lib/key/keyVault';
-import type { Citation } from 'mp-mcp/types';
+import type { Citation } from '@jamesmccomish/mp-mcp/types';
 import { useState } from 'react';
 import { CardShell } from './CardShell';
 import styles from './DebateCard.module.css';

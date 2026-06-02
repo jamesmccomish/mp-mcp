@@ -1,4 +1,4 @@
-import type { Citation, GetDivisionData, House } from 'mp-mcp/types';
+import type { Citation, GetDivisionData, House } from '@jamesmccomish/mp-mcp/types';
 
 export interface PartyTally {
   party: string;
