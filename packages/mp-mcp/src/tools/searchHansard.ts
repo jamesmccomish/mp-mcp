@@ -186,7 +186,6 @@ export const searchHansardToolDefinition = {
     '',
     'Inputs: query (required), member_id (optional scope), section (debates|written_answers|statements|all, default all), assembly (commons|lords|both, default both), from_date / to_date (ISO-8601), limit (1–50, default 20), response_format (concise|detailed; detailed widens excerpts from 200 to 400 characters).',
     '',
-    'This response includes a `sources` array of hansard.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: SearchHansardInputSchema,

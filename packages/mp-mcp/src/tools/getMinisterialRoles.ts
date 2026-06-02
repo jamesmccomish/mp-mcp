@@ -114,7 +114,6 @@ export const getMinisterialRolesToolDefinition = {
     '',
     'Inputs: branch (government|opposition, default government), filter (substring on post title or department — strongly recommended), limit (1–50, default 25), response_format (concise|detailed; detailed adds the holder member_id, start date, and whether the post is paid).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when the list is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetMinisterialRolesInputSchema,

@@ -76,7 +76,6 @@ export const getStateOfPartiesToolDefinition = {
     '',
     'Inputs: assembly (commons|lords, default commons), on_date (ISO-8601, default today), response_format (concise|detailed; detailed adds the party abbreviation and a gender breakdown).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`.',
   ].join('\n'),
   inputSchema: GetStateOfPartiesInputSchema,

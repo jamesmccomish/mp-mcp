@@ -206,7 +206,6 @@ export const getDivisionToolDefinition = {
     '',
     'Inputs: division_id (required; resolve via parliament_search_divisions, parliament_member_voting_history, or parliament_topic_tracker), assembly (commons|lords, default commons), include_rebellions (default false; lists members who voted against their party majority in this division), response_format (concise|detailed; detailed includes per-MP voter lists).',
     '',
-    'This response includes a `sources` array of votes.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetDivisionInputSchema,

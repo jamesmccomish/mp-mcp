@@ -139,7 +139,6 @@ export const getElectionResultsToolDefinition = {
     '',
     'Inputs: constituency_id (required; resolve via parliament_find_constituency), include_history (default false), response_format (concise|detailed; detailed adds the per-candidate vote breakdown, capped at the top 10).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when the candidate list is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetElectionResultsInputSchema,

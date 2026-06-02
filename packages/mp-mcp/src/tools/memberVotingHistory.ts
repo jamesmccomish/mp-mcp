@@ -142,7 +142,6 @@ export const memberVotingHistoryToolDefinition = {
     '',
     'Inputs: member_id (required, resolve via parliament_find_member), topic (literal substring matched against division title), from_date / to_date (ISO-8601), assembly (commons|lords, default commons), limit (1–100, default 20), response_format (concise|detailed; detailed adds division_id/number and aye/no counts for chaining to parliament_get_division).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberVotingHistoryInputSchema,

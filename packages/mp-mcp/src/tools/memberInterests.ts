@@ -111,7 +111,6 @@ export const memberInterestsToolDefinition = {
     '',
     'Inputs: member_id (required), category_number (e.g. "1.1"), from_date (ISO-8601), limit (1–50, default 20), response_format (concise|detailed; detailed includes typed fields).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: MemberInterestsInputSchema,

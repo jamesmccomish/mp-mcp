@@ -103,7 +103,6 @@ export const findMemberToolDefinition = {
     '',
     'Inputs: query (name | constituency | postcode), assembly (commons|lords|both, default commons), current_only (default true), response_format (concise|detailed, default concise).',
     '',
-    'This response includes a `sources` array of parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: FindMemberInputSchema,

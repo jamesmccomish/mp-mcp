@@ -131,7 +131,6 @@ export const getBillToolDefinition = {
     '',
     'Inputs: bill_id (required; resolve via parliament_topic_tracker), include_stages (default false), response_format (concise|detailed; detailed adds the long title, a truncated summary, the originating house, and the full sponsor list).',
     '',
-    'This response includes a `sources` array of bills.parliament.uk URLs. Cite them inline when making factual claims to the user.',
     'Response envelope: `meta` carries `upstream_calls`; when output is capped it also sets `truncated` and `truncation_hint`.',
   ].join('\n'),
   inputSchema: GetBillInputSchema,

@@ -6,9 +6,10 @@
  *   B. baseline  — the agent with web search but NO MCP (or no tools at all,
  *                  via MP_MCP_BENCH_BASELINE=none)
  *
- * It accumulates the full token spend (input + output) of each arm from 0 to
- * finish, plus an LLM-as-judge accuracy verdict, and writes a comparison report
- * to evals/reports/benchmark-<date>.md.
+ * It accumulates the full, billed-equivalent token spend of each arm from 0 to
+ * finish (the with-MCP arm prompt-caches the tool catalogue + system prompt, as
+ * real MCP clients do), plus an LLM-as-judge accuracy verdict and each arm's
+ * response text, and writes a comparison report to evals/reports/benchmark-<date>.md.
  *
  * Costs real Anthropic tokens. Run on demand, not in CI.
  *
@@ -42,6 +43,9 @@ type ArmResult = {
   arm: ArmKind;
   input_tokens: number;
   output_tokens: number;
+  cache_creation: number;
+  cache_read: number;
+  // Billed-equivalent total: cache writes cost 1.25x and reads 0.1x of input.
   total_tokens: number;
   tool_calls: number;
   web_searches: number;
@@ -50,6 +54,8 @@ type ArmResult = {
   judge: 'pass' | 'fail' | null;
   error?: string;
 };
+
+type Usage = { input: number; output: number; cacheCreation: number; cacheRead: number };
 
 type BenchRow = { task: EvalTask; withMcp: ArmResult; baseline: ArmResult };
 
@@ -73,6 +79,9 @@ async function main(): Promise<void> {
     description: t.description ?? '',
     input_schema: t.inputSchema as Anthropic.Tool['input_schema'],
   }));
+  // Surface the server instructions (citation contract) as the system prompt,
+  // mirroring how real MCP clients connect.
+  const instructions = mcpClient.getInstructions();
 
   const requested = process.argv.slice(2);
   const ids = requested.length > 0 ? requested : BENCHMARK_TASK_IDS;
@@ -89,7 +98,7 @@ async function main(): Promise<void> {
   for (const task of tasks) {
     process.stderr.write(`[bench] ${task.id} ${task.category} — arm A (with MCP) ...\n`);
     const withMcp = await safely('with_mcp', () =>
-      runWithMcp(anthropic, mcpClient, anthropicTools, task),
+      runWithMcp(anthropic, mcpClient, anthropicTools, task, instructions),
     );
     process.stderr.write(`[bench] ${task.id} ${task.category} — arm B (baseline) ...\n`);
     const baseline = await safely('baseline', () => runBaseline(anthropic, task));
@@ -121,11 +130,26 @@ async function runWithMcp(
   mcp: Client,
   tools: Anthropic.Tool[],
   task: EvalTask,
+  instructions?: string,
 ): Promise<ArmResult> {
   const start = Date.now();
   const messages: Anthropic.MessageParam[] = [{ role: 'user', content: task.prompt }];
+
+  // Prompt-cache the static prefix (tool catalogue + system instructions) so
+  // turns 2+ read it at ~10% instead of re-billing the full schemas each turn —
+  // this is how real MCP clients are billed. cache_control on the last tool
+  // caches the whole tools block.
+  const cachedTools = tools.map((t, i) =>
+    i === tools.length - 1 ? { ...t, cache_control: { type: 'ephemeral' as const } } : t,
+  );
+  const system: Anthropic.TextBlockParam[] | undefined = instructions
+    ? [{ type: 'text', text: instructions, cache_control: { type: 'ephemeral' } }]
+    : undefined;
+
   let inputTokens = 0;
   let outputTokens = 0;
+  let cacheCreation = 0;
+  let cacheRead = 0;
   let toolCalls = 0;
   let finalText = '';
 
@@ -133,11 +157,14 @@ async function runWithMcp(
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 4096,
-      tools,
+      tools: cachedTools,
       messages,
+      ...(system ? { system } : {}),
     });
     inputTokens += response.usage.input_tokens;
     outputTokens += response.usage.output_tokens;
+    cacheCreation += cacheCreationTokens(response.usage);
+    cacheRead += cacheReadTokens(response.usage);
 
     const toolUseBlocks = response.content.filter(
       (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
@@ -180,11 +207,11 @@ async function runWithMcp(
     messages.push({ role: 'user', content: toolResultBlocks });
   }
 
-  return arm('with_mcp', inputTokens, outputTokens, {
-    tool_calls: toolCalls,
-    final_text: finalText,
-    duration_ms: Date.now() - start,
-  });
+  return arm(
+    'with_mcp',
+    { input: inputTokens, output: outputTokens, cacheCreation, cacheRead },
+    { tool_calls: toolCalls, final_text: finalText, duration_ms: Date.now() - start },
+  );
 }
 
 // Arm B: the agent with web search (server-side tool) but no MCP, or no tools
@@ -225,11 +252,11 @@ async function runBaseline(anthropic: Anthropic, task: EvalTask): Promise<ArmRes
     break;
   }
 
-  return arm('baseline', inputTokens, outputTokens, {
-    web_searches: webSearches,
-    final_text: finalText,
-    duration_ms: Date.now() - start,
-  });
+  return arm(
+    'baseline',
+    { input: inputTokens, output: outputTokens, cacheCreation: 0, cacheRead: 0 },
+    { web_searches: webSearches, final_text: finalText, duration_ms: Date.now() - start },
+  );
 }
 
 async function gradeArm(anthropic: Anthropic, task: EvalTask, result: ArmResult): Promise<void> {
@@ -251,6 +278,8 @@ async function safely(kind: ArmKind, run: () => Promise<ArmResult>): Promise<Arm
       arm: kind,
       input_tokens: 0,
       output_tokens: 0,
+      cache_creation: 0,
+      cache_read: 0,
       total_tokens: 0,
       tool_calls: 0,
       web_searches: 0,
@@ -264,21 +293,46 @@ async function safely(kind: ArmKind, run: () => Promise<ArmResult>): Promise<Arm
 
 function arm(
   kind: ArmKind,
-  inputTokens: number,
-  outputTokens: number,
+  usage: Usage,
   extra: Partial<ArmResult> & { final_text: string; duration_ms: number },
 ): ArmResult {
   return {
     arm: kind,
-    input_tokens: inputTokens,
-    output_tokens: outputTokens,
-    total_tokens: inputTokens + outputTokens,
+    input_tokens: usage.input,
+    output_tokens: usage.output,
+    cache_creation: usage.cacheCreation,
+    cache_read: usage.cacheRead,
+    total_tokens: billedTotal(usage),
     tool_calls: extra.tool_calls ?? 0,
     web_searches: extra.web_searches ?? 0,
     final_text: extra.final_text,
     duration_ms: extra.duration_ms,
     judge: null,
   };
+}
+
+// What you actually pay: uncached input + output at 1x, cache writes at 1.25x,
+// cache reads at 0.1x.
+function billedTotal(usage: Usage): number {
+  return Math.round(
+    usage.input + usage.output + 1.25 * usage.cacheCreation + 0.1 * usage.cacheRead,
+  );
+}
+
+// Tokens this arm would have cost with no caching (every turn re-bills the
+// prefix at 1x) — used to show the savings caching provides.
+function uncachedEquivalent(r: ArmResult): number {
+  return r.input_tokens + r.output_tokens + r.cache_creation + r.cache_read;
+}
+
+function cacheCreationTokens(usage: Anthropic.Usage): number {
+  return (
+    (usage as { cache_creation_input_tokens?: number | null }).cache_creation_input_tokens ?? 0
+  );
+}
+
+function cacheReadTokens(usage: Anthropic.Usage): number {
+  return (usage as { cache_read_input_tokens?: number | null }).cache_read_input_tokens ?? 0;
 }
 
 function textOf(response: Anthropic.Message): string {
@@ -312,19 +366,34 @@ function renderReport(rows: BenchRow[]): string {
   const stamp = new Date().toISOString();
   const baselineLabel = BASELINE_MODE === 'web' ? 'web search, no MCP' : 'no tools';
 
+  const uncachedMcp = rows.reduce((s, r) => s + uncachedEquivalent(r.withMcp), 0);
+
   const perTask = rows
     .map((r) => {
       const delta = r.withMcp.total_tokens - r.baseline.total_tokens;
+      const uncached = uncachedEquivalent(r.withMcp);
       return `### ${r.task.id} (${r.task.category})
 
 **Prompt:** ${r.task.prompt}
 
-| Arm | In | Out | Total | MCP calls | Web searches | Accuracy |
-|---|--:|--:|--:|--:|--:|---|
-| with MCP | ${r.withMcp.input_tokens} | ${r.withMcp.output_tokens} | ${r.withMcp.total_tokens} | ${r.withMcp.tool_calls} | — | ${verdict(r.withMcp)} |
-| baseline (${baselineLabel}) | ${r.baseline.input_tokens} | ${r.baseline.output_tokens} | ${r.baseline.total_tokens} | — | ${r.baseline.web_searches} | ${verdict(r.baseline)} |
+| Arm | In (uncached) | Cache write | Cache read | Out | Billed total | Calls / searches | Accuracy |
+|---|--:|--:|--:|--:|--:|--:|---|
+| with MCP | ${r.withMcp.input_tokens} | ${r.withMcp.cache_creation} | ${r.withMcp.cache_read} | ${r.withMcp.output_tokens} | ${r.withMcp.total_tokens} | ${r.withMcp.tool_calls} calls | ${verdict(r.withMcp)} |
+| baseline (${baselineLabel}) | ${r.baseline.input_tokens} | — | — | ${r.baseline.output_tokens} | ${r.baseline.total_tokens} | ${r.baseline.web_searches} searches | ${verdict(r.baseline)} |
 
-**Token delta (MCP − baseline):** ${delta >= 0 ? '+' : ''}${delta}${errors(r)}`;
+**Billed delta (MCP − baseline):** ${delta >= 0 ? '+' : ''}${delta} tokens. With MCP this task billed ${r.withMcp.total_tokens}; without prompt caching it would have been ~${uncached}.${errors(r)}
+
+<details><summary>with MCP response</summary>
+
+${r.withMcp.final_text || '_(empty)_'}
+
+</details>
+
+<details><summary>baseline response</summary>
+
+${r.baseline.final_text || '_(empty)_'}
+
+</details>`;
     })
     .join('\n\n');
 
@@ -334,21 +403,26 @@ function renderReport(rows: BenchRow[]): string {
 **Baseline:** ${baselineLabel}
 **Tasks:** ${rows.length}
 
-## Totals
+## Totals (billed-equivalent tokens)
 
 | | With MCP | Baseline |
 |---|--:|--:|
-| Total tokens | ${totals.mcp} | ${totals.baseline} |
+| Billed tokens | ${totals.mcp} | ${totals.baseline} |
 
 **Overall ratio (MCP ÷ baseline):** ${ratio}×
 
+With MCP, prompt caching brought the billed total to ${totals.mcp}; without caching
+it would have been ~${uncachedMcp} tokens.
+
 Notes:
-- Token totals are input + output summed across every turn (0 to finish). Arm A's
-  input includes all MCP tool schemas on every turn; arm B's includes web-search
-  results injected into context.
+- "Billed total" = uncached input + output at 1x, cache writes at 1.25x, cache
+  reads at 0.1x — what you actually pay. Arm A prompt-caches the tool catalogue +
+  system instructions, so turns 2+ read the prefix cheaply instead of re-billing
+  every tool schema.
+- The MCP server \`instructions\` (citation contract) ARE injected as the system
+  prompt for arm A, mirroring real MCP clients.
 - Web searches are billed per request separately from tokens, so they are shown
-  as their own column and not folded into the token totals.
-- The MCP server \`instructions\` field is not injected by this harness.
+  in the calls/searches column and not folded into the token totals.
 
 ## Per-task
 

@@ -52,6 +52,9 @@ async function main(): Promise<void> {
     description: t.description ?? '',
     input_schema: t.inputSchema as Anthropic.Tool['input_schema'],
   }));
+  // Mirror real MCP clients: surface the server instructions (which carry the
+  // citation contract) as the system prompt.
+  const instructions = mcpClient.getInstructions();
 
   const filter = process.argv[2];
   const tasks = filter ? TASKS.filter((t) => t.id === filter || t.category === filter) : TASKS;
@@ -60,7 +63,7 @@ async function main(): Promise<void> {
   for (const task of tasks) {
     process.stderr.write(`[eval] ${task.id} ${task.category} ...\n`);
     try {
-      const result = await runOne(anthropic, mcpClient, anthropicTools, task);
+      const result = await runOne(anthropic, mcpClient, anthropicTools, task, instructions);
       await grade(anthropic, task, result);
       results.push(result);
       process.stderr.write(
@@ -87,6 +90,7 @@ async function runOne(
   mcp: Client,
   tools: Anthropic.Tool[],
   task: EvalTask,
+  instructions?: string,
 ): Promise<TaskResult> {
   const start = Date.now();
   const calls: ToolCallRecord[] = [];
@@ -101,6 +105,7 @@ async function runOne(
       max_tokens: 4096,
       tools,
       messages,
+      ...(instructions ? { system: instructions } : {}),
     });
     inputTokens += response.usage.input_tokens;
     outputTokens += response.usage.output_tokens;
