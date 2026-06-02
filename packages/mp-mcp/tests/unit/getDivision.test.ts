@@ -1,6 +1,7 @@
 import { MockAgent, setGlobalDispatcher } from 'undici';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getDivision } from '../../src/tools/getDivision.js';
+import { LORDS_DIVISION_DETAIL } from '../fixtures/voting.js';
 
 let mockAgent: MockAgent;
 
@@ -74,9 +75,24 @@ describe('getDivision', () => {
     expect(result.data.noes_members).toHaveLength(2);
   });
 
-  it('rejects Lords with a steering message (v1 scope)', async () => {
-    await expect(
-      getDivision({ division_id: 1, assembly: 'lords', response_format: 'concise' }),
-    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  it('fetches a Lords division, mapping content/not-content to ayes/noes', async () => {
+    mockAgent
+      .get('https://lordsvotes-api.parliament.uk')
+      .intercept({ path: '/data/Divisions/2950', method: 'GET' })
+      .reply(200, LORDS_DIVISION_DETAIL, JSON_HDR);
+
+    const result = await getDivision({
+      division_id: 2950,
+      assembly: 'lords',
+      response_format: 'detailed',
+    });
+
+    expect(result.data.house).toBe('Lords');
+    expect(result.data.ayes).toBe(3);
+    expect(result.data.noes).toBe(2);
+    expect(result.data.ayes_by_party).toEqual({ Labour: 2, Crossbench: 1 });
+    expect(result.data.noes_by_party).toEqual({ Conservative: 2 });
+    expect(result.data.ayes_members).toHaveLength(3);
+    expect(result.sources[0]?.url).toContain('/Votes/Lords/Division/2950');
   });
 });
