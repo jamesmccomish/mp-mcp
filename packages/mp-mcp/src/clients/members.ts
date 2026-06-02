@@ -192,4 +192,90 @@ export async function getRegisteredInterests(id: number): Promise<RawRegisteredI
   return envelope.value.interestCategories ?? [];
 }
 
+export type RawParty = { id: number; name: string | null; abbreviation: string | null };
+
+export type RawPartySeatCount = {
+  total: number;
+  male: number | null;
+  female: number | null;
+  nonBinary: number | null;
+  party: RawParty | null;
+};
+
+export async function getStateOfParties(
+  house: HouseId,
+  forDate: string,
+): Promise<RawPartySeatCount[]> {
+  const envelope = await getJson<{ items?: Array<{ value: RawPartySeatCount }> }>(
+    `${BASE}/Parties/StateOfTheParties/${house}/${forDate}`,
+  );
+  return (envelope.items ?? []).map((it) => it.value);
+}
+
+export type RawPostMember = {
+  id: number;
+  nameDisplayAs: string | null;
+  latestParty: RawParty | null;
+};
+
+export type RawPostHolder = {
+  member: { value: RawPostMember | null } | null;
+  startDate: string;
+  endDate: string | null;
+  isPaid: boolean;
+};
+
+export type RawGovernmentPost = {
+  id: number;
+  name: string | null;
+  postHolders: RawPostHolder[] | null;
+  governmentDepartments: Array<{ id: number; name: string | null }> | null;
+};
+
+export type PostBranch = 'government' | 'opposition';
+
+export async function getPosts(branch: PostBranch): Promise<RawGovernmentPost[]> {
+  const path = branch === 'opposition' ? 'OppositionPosts' : 'GovernmentPosts';
+  const items = await getJson<Array<{ value: RawGovernmentPost }>>(`${BASE}/Posts/${path}`);
+  return items.map((it) => it.value);
+}
+
+export type RawElectionCandidate = {
+  memberId: number | null;
+  name: string | null;
+  party: RawParty | null;
+  votes: number;
+  voteShare: number | null;
+  rankOrder: number | null;
+};
+
+export type RawElectionResult = {
+  result: string | null;
+  electorate: number;
+  turnout: number;
+  majority: number;
+  winningParty: RawParty | null;
+  electionTitle: string | null;
+  electionDate: string;
+  isGeneralElection: boolean;
+  constituencyName: string | null;
+  candidates: RawElectionCandidate[] | null;
+};
+
+export async function getLatestElectionResult(
+  constituencyId: number,
+): Promise<RawElectionResult | null> {
+  const envelope = await getJson<{ value: RawElectionResult | null }>(
+    `${BASE}/Location/Constituency/${constituencyId}/ElectionResult/Latest`,
+  );
+  return envelope.value;
+}
+
+export async function getElectionResults(constituencyId: number): Promise<RawElectionResult[]> {
+  const envelope = await getJson<{ value: RawElectionResult[] | null }>(
+    `${BASE}/Location/Constituency/${constituencyId}/ElectionResults`,
+  );
+  return envelope.value ?? [];
+}
+
 export const __testing__ = { BASE };

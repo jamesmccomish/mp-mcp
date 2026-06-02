@@ -6,6 +6,9 @@ import { getBillToolDefinition } from './getBill.js';
 import { getCommitteeToolDefinition } from './getCommittee.js';
 import { getDebateToolDefinition } from './getDebate.js';
 import { getDivisionToolDefinition } from './getDivision.js';
+import { getElectionResultsToolDefinition } from './getElectionResults.js';
+import { getMinisterialRolesToolDefinition } from './getMinisterialRoles.js';
+import { getStateOfPartiesToolDefinition } from './getStateOfParties.js';
 import { memberInterestsToolDefinition } from './memberInterests.js';
 import { memberOverviewToolDefinition } from './memberOverview.js';
 import { memberVotingHistoryToolDefinition } from './memberVotingHistory.js';
@@ -37,4 +40,7 @@ export function registerTools(server: McpServer): void {
   registerTool(server, memberInterestsToolDefinition);
   registerTool(server, getCommitteeToolDefinition);
   registerTool(server, getBillToolDefinition);
+  registerTool(server, getStateOfPartiesToolDefinition);
+  registerTool(server, getMinisterialRolesToolDefinition);
+  registerTool(server, getElectionResultsToolDefinition);
 }
