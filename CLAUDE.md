@@ -2,9 +2,9 @@
 
 ## Mission
 
-Build `mp-mcp`, a public, npm-publishable MCP server for UK Parliament data. 
+Build `mp-mcp`, a public, npm-publishable MCP server that makes UK Parliament data agent-friendly — intent-led tools, citation-first responses. It is the core deliverable.
 
-A demo app will eventually live in `apps/`; it is stubbed for now and out of scope for this build.
+The consumer apps now exist and live in `apps/`: `agent-of-parliament` (browser demo) and `mcp-host` (HTTP bridge). `mp-mcp` itself remains the primary build; see each app's README for its own scope.
 
 ## Entry points
 
@@ -22,7 +22,7 @@ A demo app will eventually live in `apps/`; it is stubbed for now and out of sco
 - **Ask before going wide.** When audience, scope, or depth is ambiguous, raise a clarifying question rather than guessing.
 - **No emojis in deliverables.**
 
-## Stack (locked — full rationale in `implementation-plan.md` §1)
+## Stack (locked — full rationale in `docs/initial-implementation-plan.md` §1)
 
 - pnpm workspaces; TypeScript 5.6+ strict; Node 22 published target; Bun supported as a dev runtime (CI matrix verifies both)
 - `@modelcontextprotocol/sdk`, Zod (schema), openapi-typescript (codegen), pino (logging), `tsc` (build — ESM-only, Node 22+ target)
@@ -33,8 +33,9 @@ A demo app will eventually live in `apps/`; it is stubbed for now and out of sco
 ## Repo shape
 
 ```
-packages/mp-mcp/           # THE BUILD — see docs/implementation-plan.md §2
-apps/[demo-app-name]/      # stubbed for now; name TBD
+packages/mp-mcp/           # THE CORE — see docs/initial-implementation-plan.md §2
+apps/agent-of-parliament/  # browser demo (consumes the MCP over HTTP)
+apps/mcp-host/             # stateless HTTP host wrapping the MCP for the connector
 docs/adrs/                 # append-only as decisions are locked
 ```
 
@@ -46,4 +47,4 @@ When a milestone closes:
 3. Add a changeset describing the user-visible change.
 4. Open a PR; CI (Node 22 + Bun matrix) gates merge.
 
-Keep this file under ~60 lines. If it grows past that, push detail into `docs/implementation-plan.md` and leave a one-line pointer here.
+Keep this file under ~60 lines. If it grows past that, push detail into `docs/initial-implementation-plan.md` and leave a one-line pointer here.

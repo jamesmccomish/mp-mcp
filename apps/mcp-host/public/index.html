@@ -11,7 +11,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="mp-mcp — A Model Context Protocol for UK Parliament data">
   <meta property="og:description"
-    content="Ten tools and four prompts for the UK parliamentary record, with every answer cited to the official source.">
+    content="Fifteen tools and four prompts for the UK parliamentary record, with every answer cited to the official source.">
   <meta property="og:image" content="/og/mp-mcp.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -502,7 +502,7 @@
 
     <section>
       <h2 class="sec-head">Tools</h2>
-      <p class="lede">Ten tools, grouped by intent, cover the whole of an agent's business with Parliament.</p>
+      <p class="lede">Fifteen tools, grouped by intent, cover the whole of an agent's business with Parliament.</p>
 
       <div class="group-label">Identity</div>
       <div class="instr">
@@ -537,6 +537,11 @@
         <div class="desc">Find Commons divisions (recorded votes) on a topic, with aye/no totals and the id to drill into a
           full party breakdown.</div>
       </div>
+      <div class="instr">
+        <div class="name">parliament_topic_tracker</div>
+        <div class="desc">A cross-Parliament round-up on one topic — bills, debates, divisions, written questions, and
+          petitions in a single call.</div>
+      </div>
 
       <div class="group-label">Detailed lookups</div>
       <div class="instr">
@@ -550,6 +555,24 @@
       <div class="instr">
         <div class="name">parliament_get_committee</div>
         <div class="desc">A committee's membership, chair, and recent work.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_get_bill</div>
+        <div class="desc">A single bill in full: its current house and stage, sponsors, and whether it has become an Act.</div>
+      </div>
+
+      <div class="group-label">Composition</div>
+      <div class="instr">
+        <div class="name">parliament_get_state_of_parties</div>
+        <div class="desc">Seat counts by party for either House, current or on a given date.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_get_ministerial_roles</div>
+        <div class="desc">Government ministers or opposition shadows, with the holder and department for each post.</div>
+      </div>
+      <div class="instr">
+        <div class="name">parliament_get_election_results</div>
+        <div class="desc">A constituency's result: winner, party, majority, turnout, and the full candidate breakdown.</div>
       </div>
     </section>
 
@@ -579,7 +602,7 @@
     <section class="citation">
       <h2 class="sec-head">On Citation</h2>
       <p>Every tool response includes a <code>sources</code> array of parliament.uk and hansard.parliament.uk URLs. When
-        your agent states a fact about a member, a vote, a debate, or a bill, it cites the corresponding URL inline. The
+        your agent states a fact about a member, a vote, a debate, a bill, a committee, or an election result, it cites the corresponding URL inline. The
         expectation is declared to the model on connection, in the server's own instructions. This is the difference
         between an assistant that merely sounds authoritative and one that can be checked.</p>
     </section>

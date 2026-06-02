@@ -32,7 +32,7 @@ decision changes, write a new ADR that supersedes the old one rather than editin
 
 ## Pull requests
 
-- Each PR should be one milestone or smaller.
+- Keep each PR to one logical, self-contained change.
 - Add a changeset (`pnpm changeset`) for any user-visible change.
 - CI must be green (typecheck, lint, unit tests) before merge.
 - Integration tests (`LIVE_APIS=1`) and the eval suite are run weekly and before each
