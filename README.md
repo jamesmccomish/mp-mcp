@@ -1,5 +1,10 @@
 # Agent of Parliament
 
+[![CI](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/mp-mcp.svg?label=mp-mcp)](https://www.npmjs.com/package/mp-mcp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![data: OPL v3.0](https://img.shields.io/badge/data-OPL%20v3.0-00603c.svg)](https://www.parliament.uk/site-information/copyright-parliament/open-parliament-licence/)
+
 **Ask UK Parliament a question in plain English, and get an answer an agent has assembled for you — every fact cited back to the official record.**
 
 UK Parliament publishes a remarkable amount of data: every vote, every debate, every bill, every MP's declared interests. But it lives behind a dozen separate APIs and search pages, and answering a question as ordinary as *"how has my MP voted on climate?"* means stitching several of them together by hand.

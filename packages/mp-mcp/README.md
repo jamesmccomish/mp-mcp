@@ -1,5 +1,10 @@
 # mp-mcp
 
+[![npm version](https://img.shields.io/npm/v/mp-mcp.svg)](https://www.npmjs.com/package/mp-mcp)
+[![CI](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/jamesmccomish/mp-mcp/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/node/v/mp-mcp.svg)](https://www.npmjs.com/package/mp-mcp)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+
 **A Model Context Protocol (MCP) server that makes UK Parliament data agent-friendly — intent-led tools, citation-first responses.**
 
 `mp-mcp` lets an agent answer real questions about Westminster — *"how has my MP voted on climate?"*, *"what is Parliament doing about NHS waiting lists?"* — by composing a small set of purpose-built tools over UK Parliament's official public APIs. Every response carries source URLs so the agent can cite its claims back to `parliament.uk` and `hansard.parliament.uk`.

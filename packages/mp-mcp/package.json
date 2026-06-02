@@ -43,7 +43,7 @@
     }
   },
   "bin": {
-    "mp-mcp": "./dist/stdio.js"
+    "mp-mcp": "dist/stdio.js"
   },
   "files": ["dist", "README.md", "CHANGELOG.md", "LICENSE"],
   "scripts": {
