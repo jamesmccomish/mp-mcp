@@ -2,6 +2,7 @@
 
 import type { ChatTurn } from '@/lib/agent/connector';
 import { type FormEvent, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import styles from './ChatFeed.module.css';
 
 export function ChatFeed({
@@ -74,7 +75,11 @@ export function ChatFeed({
                   <div>
                     {turn.role === 'assistant' && <div className={styles.label}>Claude</div>}
                     <div className={styles.bubble}>
-                      {turn.content}
+                      {turn.role === 'assistant' ? (
+                        <ReactMarkdown>{turn.content}</ReactMarkdown>
+                      ) : (
+                        turn.content
+                      )}
                       {turn.role === 'assistant' && last && streaming && (
                         <span className={styles.caret} />
                       )}

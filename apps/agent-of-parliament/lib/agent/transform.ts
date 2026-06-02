@@ -9,6 +9,19 @@ interface ToolResultEnvelope {
   sources?: Citation[];
 }
 
+// mp-mcp error payloads are JSON with this shape.
+interface McpErrorPayload {
+  error?: { message?: string };
+}
+
+function parseMcpError(text: string): string {
+  try {
+    const payload = JSON.parse(text) as McpErrorPayload;
+    if (payload.error?.message) return payload.error.message;
+  } catch {}
+  return text;
+}
+
 // MCP tool-result content is either a plain string or text blocks; flatten to text.
 function resultText(content: string | Array<{ text: string }>): string {
   return typeof content === 'string' ? content : content.map((b) => b.text).join('');
@@ -36,7 +49,7 @@ export async function* transform(
         const text = resultText(block.content);
 
         if (block.is_error) {
-          yield { type: 'error', message: text };
+          yield { type: 'error', message: parseMcpError(text) };
           continue;
         }
 

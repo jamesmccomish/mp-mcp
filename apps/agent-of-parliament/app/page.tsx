@@ -133,7 +133,7 @@ export default function Page() {
           },
         ]);
       } else if (event.type === 'error') {
-        setHistory((h) => appendToLast(h, `\n\n[error] ${event.message}`));
+        setHistory((h) => appendToLast(h, `\n\n_${event.message} — adjusting…_\n\n`));
       }
     };
 
