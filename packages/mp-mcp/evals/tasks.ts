@@ -1,18 +1,25 @@
 /**
- * 20 seed tasks for the mp-mcp eval suite. Tasks are grouped by category:
+ * Eval suite for mp-mcp tool selection. Tasks are grouped by category:
  *
- *   A. Postcode → MP report card (5)
- *   B. Topic-filtered voting (5)
- *   C. Topic tracking (5)
- *   D. Trap prompts the agent should NOT call the MCP for (5)
+ *   postcode-report — Postcode/name → MP report card
+ *   voting          — Divisions and per-member voting records
+ *   topic           — Cross-Parliament topic tracking and bill drill-ins
+ *   reference       — Structural lookups (parties, ministers, elections)
+ *   trap            — Prompts the agent should NOT call the MCP for
  *
- * Verifiers return { pass, notes } for each run. Keep them deterministic
- * (substring checks, tool-name presence) so the eval report reflects the
- * MCP's quality, not the verifier's. LLM-as-judge tasks are marked
- * `judge: true` and require ANTHROPIC_API_KEY to grade.
+ * This set is APPEND-ONLY and expected to grow: every new tool or steering
+ * refinement should add at least one task here (see ADR-0004). There is no
+ * fixed size — `tests/unit/evalTasks.test.ts` enforces integrity (unique ids,
+ * every task has a verifier, known categories), not a task count.
+ *
+ * Verifiers are deterministic (substring checks, tool-name presence) so the
+ * report reflects the MCP's quality, not the verifier's. Tasks with a `judge`
+ * criterion are graded by an LLM and require ANTHROPIC_API_KEY.
  */
 
-export type EvalCategory = 'postcode-report' | 'voting' | 'topic' | 'trap';
+export const EVAL_CATEGORIES = ['postcode-report', 'voting', 'topic', 'reference', 'trap'] as const;
+
+export type EvalCategory = (typeof EVAL_CATEGORIES)[number];
 
 export type EvalTask = {
   id: string;
@@ -134,6 +141,26 @@ export const TASKS: EvalTask[] = [
         'Names Starmer (Holborn and St Pancras), reports either a specific cross-party vote with citation OR honestly states no such votes were found in the data accessed.',
     },
   },
+  {
+    id: 'B6',
+    category: 'voting',
+    prompt: 'Which MPs rebelled against their party on the most recent tax-related division?',
+    expected_tools: ['parliament_search_divisions', 'parliament_get_division'],
+    judge: {
+      criteria:
+        'Finds a recent tax-related division (parliament_search_divisions), drills in with parliament_get_division using include_rebellions, and reports the rebels (or honestly states there were none) with a votes.parliament.uk citation. Must not claim a cross-history rebellion count.',
+    },
+  },
+  {
+    id: 'B7',
+    category: 'voting',
+    prompt: 'How has Lord Forsyth of Drumlean voted in the House of Lords?',
+    expected_tools: ['parliament_find_member', 'parliament_member_voting_history'],
+    judge: {
+      criteria:
+        'Resolves the peer (assembly=lords), reports their Lords voting record using parliament_member_voting_history with assembly=lords (content/not-content surfaced as aye/no), and cites a Lords division URL — or honestly reports no recorded votes if the data is empty.',
+    },
+  },
 
   // ── Category C: topic tracking ─────────────────────────────────────────────
   {
@@ -187,6 +214,48 @@ export const TASKS: EvalTask[] = [
         'Returns recent climate written questions from the current month with citations, or honestly says none were tabled if the data is genuinely empty.',
     },
   },
+  {
+    id: 'C6',
+    category: 'topic',
+    prompt: 'What stage is the Renters Rights Bill at and who sponsors it?',
+    expected_tools: ['parliament_get_bill'],
+    judge: {
+      criteria:
+        'Identifies the Renters Rights Bill, drills in with parliament_get_bill to report its current stage and sponsor(s), and cites a bills.parliament.uk URL.',
+    },
+  },
+
+  // ── Category E: reference / structure ──────────────────────────────────────
+  {
+    id: 'E1',
+    category: 'reference',
+    prompt: 'What is the current state of the parties in the House of Commons?',
+    expected_tools: ['parliament_get_state_of_parties'],
+    judge: {
+      criteria:
+        'Reports seat counts by party for the Commons (largest parties first) with a parliament.uk citation.',
+    },
+  },
+  {
+    id: 'E2',
+    category: 'reference',
+    prompt: 'Who is the current Health Secretary?',
+    expected_tools: ['parliament_get_ministerial_roles'],
+    judge: {
+      criteria:
+        'Names the current Secretary of State for Health and Social Care via parliament_get_ministerial_roles (government branch, filtered), with a parliament.uk citation.',
+    },
+  },
+  {
+    id: 'E3',
+    category: 'reference',
+    prompt: 'Who won Chorley at the last general election and by how much?',
+    expected_tools: ['parliament_find_constituency', 'parliament_get_election_results'],
+    judge: {
+      criteria:
+        'Resolves the Chorley constituency, reports the winning candidate/party and majority from the latest election via parliament_get_election_results, and cites a parliament.uk URL.',
+    },
+  },
 
   // ── Category D: trap prompts ───────────────────────────────────────────────
   {
@@ -203,6 +272,10 @@ export const TASKS: EvalTask[] = [
       'parliament_member_voting_history',
       'parliament_member_interests',
       'parliament_get_committee',
+      'parliament_get_bill',
+      'parliament_get_state_of_parties',
+      'parliament_get_ministerial_roles',
+      'parliament_get_election_results',
     ],
     judge: {
       criteria:

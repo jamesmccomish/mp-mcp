@@ -1,23 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import { TASKS } from '../../evals/tasks.js';
+import { EVAL_CATEGORIES, TASKS } from '../../evals/tasks.js';
+
+// The eval set is append-only and expected to grow as tools are added (ADR-0004).
+// These checks enforce structural integrity, NOT a fixed size — adding relevant
+// tasks should never require loosening a count assertion.
 
 describe('eval task set', () => {
-  it('contains 20 tasks', () => {
-    expect(TASKS).toHaveLength(20);
-  });
-
-  it('has exactly 5 tasks per category', () => {
-    const counts = new Map<string, number>();
-    for (const t of TASKS) counts.set(t.category, (counts.get(t.category) ?? 0) + 1);
-    expect(counts.get('postcode-report')).toBe(5);
-    expect(counts.get('voting')).toBe(5);
-    expect(counts.get('topic')).toBe(5);
-    expect(counts.get('trap')).toBe(5);
+  it('is non-empty', () => {
+    expect(TASKS.length).toBeGreaterThan(0);
   });
 
   it('has unique ids', () => {
     const ids = TASKS.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('uses only known categories', () => {
+    const known = new Set<string>(EVAL_CATEGORIES);
+    for (const t of TASKS) {
+      expect(known.has(t.category), `task ${t.id} has unknown category "${t.category}"`).toBe(true);
+    }
+  });
+
+  it('keeps every declared category populated', () => {
+    for (const category of EVAL_CATEGORIES) {
+      const count = TASKS.filter((t) => t.category === category).length;
+      expect(count, `category "${category}" has no tasks`).toBeGreaterThan(0);
+    }
   });
 
   it('every task either has a verifier hook or a judge criterion', () => {
