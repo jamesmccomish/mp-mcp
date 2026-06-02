@@ -2,6 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerTool } from '../lib/registerTool.js';
 import { findConstituencyToolDefinition } from './findConstituency.js';
 import { findMemberToolDefinition } from './findMember.js';
+import { getBillToolDefinition } from './getBill.js';
 import { getCommitteeToolDefinition } from './getCommittee.js';
 import { getDebateToolDefinition } from './getDebate.js';
 import { getDivisionToolDefinition } from './getDivision.js';
@@ -35,4 +36,5 @@ export function registerTools(server: McpServer): void {
   registerTool(server, getDivisionToolDefinition);
   registerTool(server, memberInterestsToolDefinition);
   registerTool(server, getCommitteeToolDefinition);
+  registerTool(server, getBillToolDefinition);
 }

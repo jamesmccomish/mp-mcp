@@ -44,13 +44,14 @@ describe('mp-mcp server (in-memory)', () => {
     );
   });
 
-  it('registers all 11 firm tools', async () => {
+  it('registers the full firm tool set', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
       [
         'parliament_find_constituency',
         'parliament_find_member',
+        'parliament_get_bill',
         'parliament_get_committee',
         'parliament_get_debate',
         'parliament_get_division',

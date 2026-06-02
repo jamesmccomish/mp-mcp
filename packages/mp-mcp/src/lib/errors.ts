@@ -4,6 +4,7 @@ export type ParliamentErrorCode =
   | 'NO_DIVISION_FOUND'
   | 'NO_DEBATE_FOUND'
   | 'NO_COMMITTEE_FOUND'
+  | 'NO_BILL_FOUND'
   | 'QUERY_TOO_BROAD'
   | 'INVALID_INPUT'
   | 'UPSTREAM_UNAVAILABLE'
