@@ -28,6 +28,9 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      # OIDC trusted publishing needs npm >= 11.5.1; node 22 ships npm 10.
+      - run: npm install -g npm@latest
+
       - run: pnpm install --frozen-lockfile
 
       - name: Create Release PR or Publish
@@ -39,4 +42,3 @@ jobs:
           title: 'chore: release packages'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
