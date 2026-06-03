@@ -22,6 +22,8 @@ export type WrittenQuestionSearchParams = {
   askedStartDate?: string;
   askedEndDate?: string;
   memberId?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export async function searchWrittenQuestions(
@@ -31,6 +33,8 @@ export async function searchWrittenQuestions(
     results: Array<{ value: RawWrittenQuestion }> | RawWrittenQuestion[];
     totalResults: number;
   }>(`${BASE}/questions`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       searchTerm: params.searchTerm,
       askedStartDate: params.askedStartDate,

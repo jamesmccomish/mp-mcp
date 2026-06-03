@@ -15,12 +15,32 @@ import styles from './DebateCard.module.css';
 import { formatDate } from './format';
 
 function SearchView({ vm }: { vm: DebateSearchViewModel }) {
+  if (vm.searchMode === 'debates') {
+    return (
+      <CardShell kicker="Hansard Debates" sources={vm.sources}>
+        <div className={styles.meta}>
+          Showing {vm.hitCount} matching debate{vm.hitCount === 1 ? '' : 's'}
+          {vm.total > vm.hitCount ? ` of ${vm.total}` : ''}.
+        </div>
+        {vm.debates.map((hit) => (
+          <div key={hit.debateExtId} className={styles.hit}>
+            <div className={styles.speaker}>{hit.title}</div>
+            <div className={styles.meta}>
+              {hit.house} · {formatDate(hit.date)}
+            </div>
+          </div>
+        ))}
+      </CardShell>
+    );
+  }
+
   return (
-    <CardShell kicker="Hansard Search" sources={vm.sources}>
+    <CardShell kicker="Hansard Contributions" sources={vm.sources}>
       <div className={styles.meta}>
-        Showing {vm.hitCount} matching contribution{vm.hitCount === 1 ? '' : 's'}.
+        Showing {vm.hitCount} matching contribution{vm.hitCount === 1 ? '' : 's'}
+        {vm.total > vm.hitCount ? ` of ${vm.total}` : ''}.
       </div>
-      {vm.hits.map((hit) => (
+      {vm.contributions.map((hit) => (
         <div key={`${hit.memberName}-${hit.excerpt.slice(0, 24)}`} className={styles.hit}>
           <div className={styles.speaker}>{hit.debateTitle}</div>
           <div className={styles.meta}>

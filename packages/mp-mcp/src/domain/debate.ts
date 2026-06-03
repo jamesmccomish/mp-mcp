@@ -13,6 +13,13 @@ export type HansardHit = {
   section: string;
 };
 
+export type HansardDebateHit = {
+  title: string;
+  house: House;
+  date: string;
+  debate_ext_id: string;
+};
+
 export type DebateContribution = {
   attributed_to: string | null;
   member_id: number | null;

@@ -6,7 +6,7 @@ import type {
 } from '@jamesmccomish/mp-mcp/types';
 import { plainText } from './html';
 
-export interface DebateHit {
+export interface DebateContributionHit {
   speaker: string;
   memberName: string;
   debateTitle: string;
@@ -16,6 +16,13 @@ export interface DebateHit {
   house: House;
 }
 
+export interface DebateTitleHit {
+  title: string;
+  date: string;
+  house: House;
+  debateExtId: string;
+}
+
 export interface DebateExcerpt {
   speaker: string;
   text: string;
@@ -23,9 +30,13 @@ export interface DebateExcerpt {
 
 export interface DebateSearchViewModel {
   mode: 'search';
-  totalContributions: number;
+  // Which Hansard layer was searched. `debates` is title-only metadata for topic
+  // discovery; `member_contributions` is one member's speeches/answers.
+  searchMode: 'debates' | 'member_contributions';
+  total: number;
   hitCount: number;
-  hits: DebateHit[];
+  debates: DebateTitleHit[];
+  contributions: DebateContributionHit[];
   sources: Citation[];
 }
 
@@ -44,11 +55,17 @@ export interface DebateDetailViewModel {
 
 export type DebateViewModel = DebateSearchViewModel | DebateDetailViewModel;
 
-// parliament_search_hansard returns a `hits` array; parliament_get_debate returns a
-// single debate with `contributions`. Both map onto the debate card, so the presence
-// of `hits` discriminates which shape we were handed.
+// parliament_search_hansard payloads carry a `mode` discriminator; parliament_get_debate
+// returns a single debate with `contributions` (a flat array of excerpts) and no `mode`.
+// Presence of `mode` is what tells us which tool produced the data.
 function isSearch(data: unknown): data is SearchHansardData {
-  return typeof data === 'object' && data !== null && 'hits' in data;
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'mode' in data &&
+    ((data as { mode: unknown }).mode === 'debates' ||
+      (data as { mode: unknown }).mode === 'member_contributions')
+  );
 }
 
 // search-hit list OR single-debate text -> debate card view-model. `data` is the
@@ -56,19 +73,28 @@ function isSearch(data: unknown): data is SearchHansardData {
 // contract once the shape is known.
 export function adaptDebate(data: unknown, sources: Citation[]): DebateViewModel {
   if (isSearch(data)) {
+    const contributions: DebateContributionHit[] = data.contributions.map((h) => ({
+      speaker: h.attributed_to,
+      memberName: h.member_name,
+      debateTitle: h.debate_title.trim(),
+      excerpt: plainText(h.excerpt),
+      date: h.date,
+      section: h.section,
+      house: h.house,
+    }));
+    const debates: DebateTitleHit[] = data.debates.map((d) => ({
+      title: d.title.trim(),
+      date: d.date,
+      house: d.house,
+      debateExtId: d.debate_ext_id,
+    }));
     return {
       mode: 'search',
-      totalContributions: data.total_contributions,
-      hitCount: data.hits.length,
-      hits: data.hits.map((h) => ({
-        speaker: h.attributed_to,
-        memberName: h.member_name,
-        debateTitle: h.debate_title.trim(),
-        excerpt: plainText(h.excerpt),
-        date: h.date,
-        section: h.section,
-        house: h.house,
-      })),
+      searchMode: data.mode,
+      total: data.total,
+      hitCount: data.mode === 'debates' ? debates.length : contributions.length,
+      debates,
+      contributions,
       sources,
     };
   }

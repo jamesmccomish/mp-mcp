@@ -44,10 +44,14 @@ export type HansardSearchParams = {
   endDate?: string;
   take?: number;
   skip?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export async function searchHansard(params: HansardSearchParams): Promise<HansardSearchResult> {
   return getJson<HansardSearchResult>(`${BASE}/search.json`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       // Hansard binds every search param under the `queryParameters.` object
       // (see src/generated/hansard.d.ts, Search_FullSearch). A bare key is
@@ -76,6 +80,8 @@ export async function searchHansardDebates(
   params: HansardSearchParams,
 ): Promise<{ Results: HansardDebateSearchHit[]; TotalResultCount: number }> {
   return getJson(`${BASE}/search/debates.json`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       // Same `queryParameters.` binding as /search.json (Search_SearchDebates).
       'queryParameters.searchTerm': params.searchTerm,

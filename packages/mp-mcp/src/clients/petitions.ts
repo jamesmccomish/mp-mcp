@@ -31,10 +31,14 @@ export type PetitionSearchParams = {
   search: string;
   state?: PetitionState | 'all';
   page?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export async function searchPetitions(params: PetitionSearchParams): Promise<RawPetition[]> {
   const envelope = await getJson<{ data: RawPetition[] }>(`${BASE}/petitions.json`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       search: params.search,
       state: params.state ?? 'open',

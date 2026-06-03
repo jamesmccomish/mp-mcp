@@ -61,7 +61,7 @@ export async function getJson<T>(url: string, options: RequestOptions = {}): Pro
       return (await response.json()) as T;
     } catch (error) {
       lastError = error;
-      if (!isRetryable(error) || attempt >= MAX_ATTEMPTS) {
+      if (!isRetryable(error) || attempt >= MAX_ATTEMPTS || options.signal?.aborted) {
         throw toToolError(error, finalUrl);
       }
       logger.debug({ url: finalUrl, attempt, error: serializeForLog(error) }, 'http retry');

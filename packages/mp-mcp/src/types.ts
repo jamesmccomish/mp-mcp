@@ -12,7 +12,12 @@ export type {
   ConstituencySummary,
 } from './domain/member.js';
 export type { Vote, MemberVote, DivisionDetail } from './domain/vote.js';
-export type { HansardHit, DebateContribution, DebateDetail } from './domain/debate.js';
+export type {
+  HansardHit,
+  HansardDebateHit,
+  DebateContribution,
+  DebateDetail,
+} from './domain/debate.js';
 export type { Interest } from './domain/interest.js';
 export type { FindMemberData } from './tools/findMember.js';
 export type { FindConstituencyData } from './tools/findConstituency.js';

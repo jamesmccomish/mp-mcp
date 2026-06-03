@@ -34,12 +34,16 @@ export type CommonsVotesSearchParams = {
   endDate?: string;
   take?: number;
   skip?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export async function searchCommonsDivisions(
   params: CommonsVotesSearchParams,
 ): Promise<RawDivisionSummary[]> {
   return getJson<RawDivisionSummary[]>(`${BASE}/divisions.json/search`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       'queryParameters.searchTerm': params.searchTerm,
       'queryParameters.startDate': params.startDate,

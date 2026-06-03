@@ -23,10 +23,14 @@ export type BillSearchParams = {
   take?: number;
   skip?: number;
   currentHouse?: 'Commons' | 'Lords';
+  signal?: AbortSignal;
+  timeoutMs?: number;
 };
 
 export async function searchBills(params: BillSearchParams): Promise<RawBill[]> {
   const envelope = await getJson<{ items?: RawBill[]; totalResults?: number }>(`${BASE}/Bills`, {
+    signal: params.signal,
+    timeoutMs: params.timeoutMs,
     query: {
       SearchTerm: params.searchTerm,
       CurrentHouse: params.currentHouse,

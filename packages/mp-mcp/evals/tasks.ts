@@ -201,7 +201,7 @@ export const TASKS: EvalTask[] = [
     must_include: ['hansard.parliament.uk'],
     judge: {
       criteria:
-        'Returns recent Hansard debates mentioning Ukraine with short excerpts (< 400 chars) and hansard.parliament.uk URLs.',
+        'Returns recent Hansard debate titles mentioning Ukraine (parliament_search_hansard returns debate-level metadata in its default mode) with hansard.parliament.uk URLs. Excerpts are not expected at this layer.',
     },
   },
   {

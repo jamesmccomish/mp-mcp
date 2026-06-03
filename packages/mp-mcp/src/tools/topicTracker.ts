@@ -70,6 +70,11 @@ export type TopicTrackerData = {
   }>;
 };
 
+// Each sub-call gets a per-call ceiling longer than the outer deadline so the
+// outer signal always fires first (one attempt, no wasted retry in a fan-out).
+const FAN_OUT_DEADLINE_MS = 9_000;
+const FAN_OUT_PER_CALL_MS = 15_000;
+
 export async function topicTracker(
   input: TopicTrackerInput,
 ): Promise<ToolResponse<TopicTrackerData>> {
@@ -78,24 +83,45 @@ export async function topicTracker(
   const fromIso = toIsoDate(from);
   const toIso = toIsoDate(to);
 
-  const [billsR, debatesR, votesR, questionsR, petitionsR] = await Promise.allSettled([
-    searchBills({ searchTerm: input.topic, take: 5 }),
-    searchHansardDebates({ searchTerm: input.topic, startDate: fromIso, endDate: toIso, take: 5 }),
-    // No date window on the division search: upstream matches a literal title
-    // substring and is most-recent-first, so windowing silently zeroed common
-    // topics (e.g. "tax") whose matching divisions sit just outside lookback.
-    searchCommonsDivisions({
-      searchTerm: input.topic,
-      take: 5,
-    }),
-    searchWrittenQuestions({
-      searchTerm: input.topic,
-      askedStartDate: fromIso,
-      askedEndDate: toIso,
-      take: 5,
-    }),
-    searchPetitions({ search: input.topic, state: 'open' }),
-  ]);
+  const fanOut = new AbortController();
+  const fanOutTimer = setTimeout(() => fanOut.abort(), FAN_OUT_DEADLINE_MS);
+  const signal = fanOut.signal;
+  const timeoutMs = FAN_OUT_PER_CALL_MS;
+
+  let billsR: PromiseSettledResult<Awaited<ReturnType<typeof searchBills>>>;
+  let debatesR: PromiseSettledResult<Awaited<ReturnType<typeof searchHansardDebates>>>;
+  let votesR: PromiseSettledResult<Awaited<ReturnType<typeof searchCommonsDivisions>>>;
+  let questionsR: PromiseSettledResult<Awaited<ReturnType<typeof searchWrittenQuestions>>>;
+  let petitionsR: PromiseSettledResult<Awaited<ReturnType<typeof searchPetitions>>>;
+
+  try {
+    [billsR, debatesR, votesR, questionsR, petitionsR] = await Promise.allSettled([
+      searchBills({ searchTerm: input.topic, take: 5, signal, timeoutMs }),
+      searchHansardDebates({
+        searchTerm: input.topic,
+        startDate: fromIso,
+        endDate: toIso,
+        take: 5,
+        signal,
+        timeoutMs,
+      }),
+      // No date window on the division search: upstream matches a literal title
+      // substring and is most-recent-first, so windowing silently zeroed common
+      // topics (e.g. "tax") whose matching divisions sit just outside lookback.
+      searchCommonsDivisions({ searchTerm: input.topic, take: 5, signal, timeoutMs }),
+      searchWrittenQuestions({
+        searchTerm: input.topic,
+        askedStartDate: fromIso,
+        askedEndDate: toIso,
+        take: 5,
+        signal,
+        timeoutMs,
+      }),
+      searchPetitions({ search: input.topic, state: 'open', signal, timeoutMs }),
+    ]);
+  } finally {
+    clearTimeout(fanOutTimer);
+  }
 
   const bills = unwrap<RawBill[]>(billsR) ?? [];
   const debates = unwrap<{ Results: HansardDebateSearchHit[] }>(debatesR)?.Results ?? [];
