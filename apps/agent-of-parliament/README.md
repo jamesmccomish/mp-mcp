@@ -22,7 +22,7 @@ Every factual line on every card carries an inline citation to a `parliament.uk`
 
 ## How it works
 
-The app is **entirely client-side** — a Next.js 16 (App Router) single page, no backend of its own.
+The app is **entirely client-side** — a Next.js 16 (App Router) single page, with no backend of its own beyond one optional telemetry route (see [Observability](#observability)).
 
 1. You enter a question; the app makes one **streamed Anthropic Messages call** with the `mcp_servers` connector (beta `mcp-client-2025-11-20`) pointed at the deployed [`mcp-host`](../mcp-host) `/mcp` endpoint.
 2. Anthropic runs the tool loop **server-to-server** — the browser never calls `/mcp` directly — and streams back `mcp_tool_use` / `mcp_tool_result` blocks alongside the narration.
@@ -34,6 +34,16 @@ The app is **entirely client-side** — a Next.js 16 (App Router) single page, n
 ## Bring your own key
 
 You run the app on **your own Anthropic API key**. It's held in the browser tab (`sessionStorage`), sent only to `api.anthropic.com`, and **never** to this app's origin or to `/mcp` — there is nothing for us to store or leak. It clears when the tab closes.
+
+## Observability
+
+Optional, off by default, and aimed at improving tool design and understanding token usage — not product analytics. When `NEXT_PUBLIC_TELEMETRY_ENABLED=true`, each turn is captured from the connector stream and written to [Langfuse](https://langfuse.com) as one trace per turn (grouped into a session per conversation):
+
+- a **generation** with the model, token usage, and cache read/creation breakdown (Langfuse computes cost);
+- a **client-side span per tool call** with the args, result size, `upstream_calls`, `truncated`, and citation count the browser can see;
+- a **server-side span per tool call** from [`mcp-host`](../mcp-host) carrying accurate wall-clock latency, joined to the same trace.
+
+The browser holds **no Langfuse credential**: it POSTs the captured turn to the [`/api/trace`](app/api/trace/route.ts) route handler, which writes to Langfuse with the server-side secret key (`LANGFUSE_SECRET_KEY` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_BASEURL`). The two ends are linked by carrying the Langfuse `traceId` in the connector's `authorization_token` — the only field Anthropic forwards to the MCP server. See [`.env.example`](.env.example).
 
 ## Run locally
 

@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
+    "@jamesmccomish/mp-mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "hono": "^4.12.23",
-    "@jamesmccomish/mp-mcp": "workspace:*"
+    "langfuse": "^3.38.20"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

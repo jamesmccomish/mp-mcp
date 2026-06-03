@@ -1,5 +1,6 @@
 import type { BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 import { describe, expect, it } from 'vitest';
+import type { TelemetrySink, ToolCallRecord, TurnUsage } from '../telemetry/types';
 import type { AgentEvent } from './events';
 import { transform } from './transform';
 
@@ -143,5 +144,114 @@ describe('transform', () => {
       STOP,
     ]);
     expect(out).toContainEqual({ type: 'error', message: 'Could not parse tool result.' });
+  });
+});
+
+function messageStart(): StreamEvent {
+  return {
+    type: 'message_start',
+    message: {
+      model: 'claude-sonnet-4-6',
+      usage: {
+        input_tokens: 100,
+        output_tokens: 1,
+        cache_read_input_tokens: 50,
+        cache_creation_input_tokens: 10,
+      },
+    },
+  } as StreamEvent;
+}
+
+function messageDelta(output: number): StreamEvent {
+  return { type: 'message_delta', delta: {}, usage: { output_tokens: output } } as StreamEvent;
+}
+
+function toolUseWithInput(id: string, name: string, input: unknown): StreamEvent {
+  return {
+    type: 'content_block_start',
+    index: 0,
+    content_block: { type: 'mcp_tool_use', id, name, server_name: 'parliament', input },
+  } as StreamEvent;
+}
+
+describe('transform telemetry sink', () => {
+  it('feeds usage and a tool record to the sink without changing UI events', async () => {
+    const usages: Array<Partial<TurnUsage> & { model?: string }> = [];
+    const tools: ToolCallRecord[] = [];
+    const sink: TelemetrySink = {
+      onUsage: (u) => usages.push(u),
+      onTool: (t) => tools.push(t),
+    };
+
+    const envelope = JSON.stringify({
+      data: { matches: [] },
+      sources: [{ title: 'Members API', url: 'https://members.parliament.uk/member/1' }],
+      meta: { upstream_calls: 2, truncated: true },
+    });
+
+    const out: AgentEvent[] = [];
+    for await (const ev of transform(
+      fromArray([
+        messageStart(),
+        toolUseWithInput('tu_1', 'parliament_find_member', { query: 'BS3 4QH' }),
+        toolResult('tu_1', envelope),
+        messageDelta(42),
+        STOP,
+      ]),
+      sink,
+    )) {
+      out.push(ev);
+    }
+
+    // UI events are unaffected (no card: find_member maps to a card kind, so it does emit one).
+    expect(out).toContainEqual({ type: 'tool_start', id: 'tu_1', name: 'parliament_find_member' });
+    expect(out).toContainEqual({ type: 'done' });
+
+    expect(usages[0]).toMatchObject({
+      model: 'claude-sonnet-4-6',
+      input: 100,
+      cache_read: 50,
+      cache_creation: 10,
+    });
+    expect(usages.at(-1)).toMatchObject({ output: 42 });
+
+    expect(tools).toHaveLength(1);
+    expect(tools[0]).toEqual({
+      name: 'parliament_find_member',
+      input: { query: 'BS3 4QH' },
+      output: envelope,
+      response_bytes: envelope.length,
+      upstream_calls: 2,
+      truncated: true,
+      sources_count: 1,
+      is_error: false,
+    });
+  });
+
+  it('captures error results and results that render no card', async () => {
+    const tools: ToolCallRecord[] = [];
+    const sink: TelemetrySink = { onUsage: () => {}, onTool: (t) => tools.push(t) };
+
+    const idResolving = JSON.stringify({ data: { id: 99 }, sources: [] });
+    for await (const _ of transform(
+      fromArray([
+        toolUse('tu_e', 'parliament_member_overview'),
+        toolResult('tu_e', 'Member not found.', true),
+        toolUseWithInput('tu_n', 'parliament_find_constituency', { name: 'x' }),
+        toolResult('tu_n', idResolving),
+        STOP,
+      ]),
+      sink,
+    )) {
+      // drain
+    }
+
+    expect(tools).toHaveLength(2);
+    expect(tools[0]).toMatchObject({
+      name: 'parliament_member_overview',
+      is_error: true,
+      sources_count: 0,
+    });
+    expect(tools[1]).toMatchObject({ name: 'parliament_find_constituency', is_error: false });
   });
 });

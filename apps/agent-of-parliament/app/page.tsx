@@ -17,12 +17,11 @@ import styles from './page.module.css';
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL ?? '';
 
 const SAMPLE_PROMPTS = [
-  'Tell me about my MP, my postcode is BS3 4QH.',
-  'How has the MP for Holborn and St Pancras voted on climate?',
+  'Tell me about my MP, my live in Buckingham Palace.',
   'What is Parliament doing about NHS waiting lists?',
   "Did Diane Abbott vote for the Renters' Rights Bill?",
   'Recent debates about Ukraine.',
-  'What does my MP do on committees? My postcode is M14 5SH.',
+  'What does my MP do on committees? My postcode is N1 6DA.',
 ];
 
 interface RawCard {
@@ -49,6 +48,9 @@ export default function Page() {
   const [mapOpen, setMapOpen] = useState(false);
   const [plainEnglish, setPlainEnglish] = useState(false);
   const cardSeq = useRef(0);
+  // One Langfuse session groups all turns in this conversation.
+  const sessionId = useRef('');
+  if (!sessionId.current) sessionId.current = crypto.randomUUID();
 
   // A lightweight member card is superseded once a detailed MP card resolves the
   // same member, so drop it to avoid two cards for one person.
@@ -138,7 +140,12 @@ export default function Page() {
     };
 
     try {
-      for await (const event of runAgentTurn({ apiKey, mcpUrl: MCP_URL, history: turns })) {
+      for await (const event of runAgentTurn({
+        apiKey,
+        mcpUrl: MCP_URL,
+        history: turns,
+        sessionId: sessionId.current,
+      })) {
         apply(event);
       }
     } finally {

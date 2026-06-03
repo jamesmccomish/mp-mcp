@@ -17,6 +17,10 @@ The `mp-mcp` package itself speaks only stdio (it runs as a subprocess). The MCP
 
 A small [Hono](https://hono.dev) app ([`src/app.ts`](src/app.ts)). Each `POST /mcp` constructs a **fresh `mp-mcp` server and transport per request** — stateless mode (no session id generator), because the SDK forbids reusing a stateless transport across requests. The app is exported via the `fetch` Web Standard so it runs unchanged on a Node server locally ([`src/index.ts`](src/index.ts), via `@hono/node-server`) and on Vercel's Node runtime ([`api/index.ts`](api/index.ts)).
 
+## Observability
+
+Optional, off by default. When the Langfuse env is set (`LANGFUSE_SECRET_KEY` / `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_BASEURL` — see [`.env.example`](.env.example)), each `tools/call` is timed and a **server-side span with accurate wall-clock latency** is written to the trace the browser owns ([`agent-of-parliament`](../agent-of-parliament)), joined by the Langfuse `traceId` the connector forwards in `authorization_token`. The body is peeked (cloned) only to read the tool name; the request stream is untouched. No env set = no telemetry, no behaviour change. See [`src/telemetry.ts`](src/telemetry.ts).
+
 ## Run locally
 
 ```bash
