@@ -1,0 +1,10 @@
+[mcp_servers.mp-mcp]
+command = "npx"
+args = [
+    "-y",
+    "@jamesmccomish/mp-mcp",
+]
+
+[mcp_servers.mp-mcp-local]
+command = "node"
+args = ["./packages/mp-mcp/dist/stdio.js"]

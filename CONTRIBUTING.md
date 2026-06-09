@@ -1,8 +1,9 @@
 # Contributing to mp-mcp
 
 Thanks for considering a contribution. This document covers the local development
-workflow. For project conventions and architectural decisions, read [`CLAUDE.md`](CLAUDE.md)
-and the ADRs under [`docs/adrs/`](docs/adrs).
+workflow. For project conventions and architectural decisions, read
+[`.agents/project.md`](.agents/project.md) and the ADRs under
+[`docs/adrs/`](docs/adrs).
 
 ## Prerequisites
 
@@ -21,14 +22,16 @@ pnpm test
 
 ## Adding an MCP tool
 
-Use the `/new-tool <camelCaseName>` slash command in Claude Code; it enforces the
-project's tool-design contract (Zod schema, response_format toggle, citation
-discipline, snapshot test, server registration).
+Use the shared `new-tool` workflow. In Codex, invoke `$new-tool`. In Claude
+Code, use `/new-tool <camelCaseName>`. Both use
+`.agents/skills/new-tool/SKILL.md`, which covers Zod schema, response_format
+toggle, citation discipline, snapshot test, and server registration.
 
 ## Recording a decision
 
-Use the `/new-adr <kebab-slug>` slash command. ADRs are append-only — when a
-decision changes, write a new ADR that supersedes the old one rather than editing.
+Use the shared `new-adr` workflow. In Codex, invoke `$new-adr`. In Claude Code,
+use `/new-adr <kebab-slug>`. ADRs are append-only — when a decision changes,
+write a new ADR that supersedes the old one rather than editing.
 
 ## Pull requests
 

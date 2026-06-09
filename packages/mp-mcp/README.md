@@ -11,13 +11,19 @@
 
 ## Install
 
-Add to Claude Code:
+Claude Code:
 
 ```bash
 claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp
 ```
 
-Or configure any MCP client that speaks stdio:
+Codex:
+
+```bash
+codex mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp
+```
+
+Any MCP client that speaks stdio:
 
 ```json
 {
@@ -137,7 +143,7 @@ pnpm --filter @jamesmccomish/mp-mcp dev        # incremental tsc --watch into di
 pnpm --filter @jamesmccomish/mp-mcp test       # vitest
 ```
 
-Once built, the repo's [`.claude/settings.json`](../../.claude/settings.json) registers the local artifact in Claude Code under the `mp-mcp-local` name. With `dev` running, edits recompile on save; restart the MCP client to pick up the new `dist/`.
+Once built, the repo's [`.claude/settings.json`](../../.claude/settings.json) registers the local artifact in Claude Code under the `mp-mcp-local` name, and [`.codex/config.toml`](../../.codex/config.toml) does the same for Codex. With `dev` running, edits recompile on save; restart the MCP client to pick up the new `dist/`.
 
 ### Inspect tool calls
 
@@ -167,7 +173,7 @@ All configuration is via environment variables (all optional):
 
 ## Contributing
 
-The tool surface is intentionally small — prefer extending an existing tool over adding one (see "Consolidate over multiply" in [`CLAUDE.md`](../../CLAUDE.md)). When a new tool is genuinely warranted, scaffold it with the `/new-tool` command ([`.claude/commands/new-tool.md`](../../.claude/commands/new-tool.md)); it encodes the full contract — Zod schema, `response_format` toggle, citation envelope, registration, and snapshot test — so the pattern can't drift. Don't hand-roll one.
+The tool surface is intentionally small — prefer extending an existing tool over adding one (see "Consolidate over multiply" in [`.agents/project.md`](../../.agents/project.md)). When a new tool is genuinely warranted, use the shared `new-tool` workflow in [`.agents/skills/new-tool/SKILL.md`](../../.agents/skills/new-tool/SKILL.md). Codex can invoke `$new-tool`; Claude Code exposes the same workflow through `/new-tool`. It encodes the full contract — Zod schema, `response_format` toggle, citation envelope, registration, and snapshot test — so the pattern can't drift. Don't hand-roll one.
 
 ## Data and licence
 
