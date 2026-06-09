@@ -39,6 +39,7 @@ pnpm-debug.log*
 .tmp/
 tmp/
 fixtures/recorded/
+**/.claude/worktrees/
 
 # Eval reports (generated; keep README and tasks)
 packages/mp-mcp/evals/reports/*

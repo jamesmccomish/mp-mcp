@@ -90,7 +90,8 @@ When a task fails, the failure usually traces to one of:
 
 1. **Tool description wasn't selected** — the agent picked a sibling tool
    or no tool. Iterate on the description; use the
-   `tool-description-reviewer` sub-agent (under `.claude/agents/`).
+   `tool-description-reviewer` agent. Shared reviewer instructions live in
+   `.agents/tool-description-reviewer.md`.
 2. **Tool selected but inputs were wrong** — the parameter descriptions or
    schema constraints aren't tight enough. Tighten the Zod schema or its
    `.describe()`.

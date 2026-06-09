@@ -43,6 +43,12 @@ Add the server to Claude Code:
 claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp
 ```
 
+Or add it to Codex:
+
+```bash
+codex mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp
+```
+
 Then ask, in your client: *"Who's my MP?"* — see [packages/mp-mcp](packages/mp-mcp) for the full tool list, configuration, and local-development setup.
 
 ## Built on
@@ -77,4 +83,4 @@ The code is **MIT** licensed — see [LICENSE](LICENSE).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Project conventions live in [CLAUDE.md](CLAUDE.md); design rationale and architecture decisions are in [docs/](docs) — start with [docs/initial-implementation-plan.md](docs/initial-implementation-plan.md) and the [ADRs](docs/adrs).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Project conventions live in [.agents/project.md](.agents/project.md), with assistant entry points in [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md). Design rationale and architecture decisions are in [docs/](docs) — start with [docs/initial-implementation-plan.md](docs/initial-implementation-plan.md) and the [ADRs](docs/adrs).

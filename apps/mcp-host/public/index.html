@@ -331,6 +331,56 @@
       border-color: var(--gilt);
     }
 
+    .tabs {
+      margin: 14px 0 0;
+    }
+
+    .tab-list {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .tab {
+      appearance: none;
+      border: 1px solid transparent;
+      border-bottom: 0;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 9px 16px;
+      margin-bottom: -1px;
+      cursor: pointer;
+    }
+
+    .tab:hover {
+      color: var(--ink);
+    }
+
+    .tab[aria-selected="true"] {
+      color: var(--green);
+      background: var(--paper);
+      border-color: var(--rule);
+      border-bottom-color: var(--paper);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab-panel[hidden] {
+      display: none;
+    }
+
+    .tab-panel .cmd-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin: 16px 0 8px;
+    }
+
     .signoff {
       margin-top: 48px;
       display: flex;
@@ -449,6 +499,14 @@
 
       .copy {
         display: none;
+      }
+
+      .tab-list {
+        display: none;
+      }
+
+      .tab-panel[hidden] {
+        display: block;
       }
 
       .cmd {
@@ -624,15 +682,39 @@
     <section class="install">
       <h2 class="sec-head">To Take Your Seat</h2>
       <p class="lede">Add the server to any MCP-capable client:</p>
-      <div class="cmd"><span class="prompt">$ </span><span class="cmd-text">claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
-      <div class="cmd"><pre class="cmd-text cmd-block">{
+
+      <div class="tabs">
+        <div class="tab-list" role="tablist" aria-label="Install instructions">
+          <button class="tab" type="button" role="tab" id="tab-claude" aria-selected="true"
+            aria-controls="panel-claude">Claude Code</button>
+          <button class="tab" type="button" role="tab" id="tab-codex" aria-selected="false"
+            aria-controls="panel-codex" tabindex="-1">Codex</button>
+        </div>
+
+        <div class="tab-panel" role="tabpanel" id="panel-claude" aria-labelledby="tab-claude">
+          <div class="cmd-label">Command line</div>
+          <div class="cmd"><span class="prompt">$ </span><span class="cmd-text">claude mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+          <div class="cmd-label">Or add to config</div>
+          <div class="cmd"><pre class="cmd-text cmd-block">{
   "mcpServers": {
     "mp-mcp": {
       "command": "npx",
       "args": ["-y", "@jamesmccomish/mp-mcp"]
     }
   }
-}</pre><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+}</pre><button class="copy" type="button" aria-label="Copy config">Copy</button></div>
+        </div>
+
+        <div class="tab-panel" role="tabpanel" id="panel-codex" aria-labelledby="tab-codex" hidden>
+          <div class="cmd-label">Command line</div>
+          <div class="cmd"><span class="prompt">$ </span><span class="cmd-text">codex mcp add mp-mcp -- npx -y @jamesmccomish/mp-mcp</span><button class="copy" type="button" aria-label="Copy install command">Copy</button></div>
+          <div class="cmd-label">Or add to config</div>
+          <div class="cmd"><pre class="cmd-text cmd-block">[mcp_servers.mp-mcp]
+command = "npx"
+args = ["-y", "@jamesmccomish/mp-mcp"]</pre><button class="copy" type="button" aria-label="Copy config">Copy</button></div>
+        </div>
+      </div>
+
       <p class="lede">Read the full technical documentation on <a href="https://github.com/jamesmccomish/mp-mcp"
           target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
     </section>
@@ -672,6 +754,29 @@
   </main>
 
   <script>
+    document.querySelectorAll(".tab-list").forEach((list) => {
+      const tabs = Array.from(list.querySelectorAll('[role="tab"]'));
+      const select = (tab) => {
+        tabs.forEach((t) => {
+          const selected = t === tab;
+          t.setAttribute("aria-selected", String(selected));
+          t.tabIndex = selected ? 0 : -1;
+          document.getElementById(t.getAttribute("aria-controls")).hidden = !selected;
+        });
+      };
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => select(tab));
+        tab.addEventListener("keydown", (event) => {
+          if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+          event.preventDefault();
+          const offset = event.key === "ArrowRight" ? 1 : -1;
+          const next = tabs[(index + offset + tabs.length) % tabs.length];
+          select(next);
+          next.focus();
+        });
+      });
+    });
+
     document.querySelectorAll(".copy").forEach((button) => {
       button.addEventListener("click", (event) => {
         const button = event.currentTarget;

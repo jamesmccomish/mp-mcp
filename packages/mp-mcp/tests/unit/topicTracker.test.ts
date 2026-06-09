@@ -267,6 +267,55 @@ describe('topicTracker', () => {
     expect(q.has('searchTerm')).toBe(false);
   });
 
+  it('does not let one hung upstream pin the whole fan-out to the deadline', async () => {
+    // Four sources answer immediately; written-questions hangs (mirrors the real
+    // outage observed in production). The tool must drop the slow source and
+    // return the healthy four well before the slow one would ever resolve —
+    // otherwise the agent waits the full fan-out window on every topic call.
+    // The deadline is shrunk via the test-only option so this assertion stays
+    // fast regardless of the (deliberately generous) production deadline.
+    mockAgent
+      .get('https://bills-api.parliament.uk')
+      .intercept({ path: /\/api\/v1\/Bills/, method: 'GET' })
+      .reply(200, { items: [BILL] }, JSON_HDR);
+    mockAgent
+      .get('https://hansard-api.parliament.uk')
+      .intercept({ path: /\/search\/debates\.json/, method: 'GET' })
+      .reply(200, { Results: [DEBATE], TotalResultCount: 1 }, JSON_HDR);
+    mockAgent
+      .get('https://commonsvotes-api.parliament.uk')
+      .intercept({ path: /\/data\/divisions\.json\/search/, method: 'GET' })
+      .reply(200, [VOTE], JSON_HDR);
+    mockAgent
+      .get('https://questions-statements-api.parliament.uk')
+      .intercept({ path: /\/api\/writtenquestions\/questions/, method: 'GET' })
+      .reply(200, { results: [{ value: QUESTION }] }, JSON_HDR)
+      .delay(30_000);
+    mockAgent
+      .get('https://petition.parliament.uk')
+      .intercept({ path: /\/petitions\.json/, method: 'GET' })
+      .reply(200, { data: [PETITION] }, JSON_HDR);
+
+    const started = Date.now();
+    const result = await topicTracker(
+      {
+        topic: 'renters rights',
+        lookback_days: 90,
+        response_format: 'concise',
+      },
+      { deadlineMs: 50 },
+    );
+    const elapsed = Date.now() - started;
+
+    // The healthy four are present; the hung source is simply empty.
+    expect(result.data.bills_in_progress).toHaveLength(1);
+    expect(result.data.recent_debates).toHaveLength(1);
+    expect(result.data.recent_votes).toHaveLength(1);
+    expect(result.data.recent_written_questions).toHaveLength(0);
+    // Must abandon the hung call at the deadline, not wait on the 30s straggler.
+    expect(elapsed).toBeLessThan(1_000);
+  }, 10_000);
+
   it('always surfaces recent_votes division_id; gates other chaining IDs by mode', async () => {
     stubAll();
     const concise = await topicTracker({

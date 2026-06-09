@@ -1,19 +1,25 @@
 # mp-mcp — pointers for LLM coding agents
 
-This file is read first by tools like Claude Code. It points at the canonical
-sources of project context. Do not re-derive the conventions below from the
-codebase — read these files.
+This file is read first by coding assistants. It points at the canonical sources
+of project context. Do not re-derive the conventions below from the codebase —
+read these files.
 
 ## Required reading
 
-- [CLAUDE.md](CLAUDE.md) — project memory: mission, current milestone, conventions
+- [.agents/project.md](.agents/project.md) — project memory: mission, current milestone, conventions
+- [AGENTS.md](AGENTS.md) — Codex entry point
+- [CLAUDE.md](CLAUDE.md) — Claude Code entry point
 
 ## Project tooling
 
+- [.agents/README.md](.agents/README.md) — shared instructions for coding assistants
 - [.claude/README.md](.claude/README.md) — what's in `.claude/` and why
-- [.claude/commands/new-tool.md](.claude/commands/new-tool.md) — scaffold a tool
-- [.claude/commands/new-adr.md](.claude/commands/new-adr.md) — record a decision
-- [.claude/agents/tool-description-reviewer.md](.claude/agents/tool-description-reviewer.md) — critique tool descriptions
+- [.codex/README.md](.codex/README.md) — what's in `.codex/` and why
+- [.agents/skills/new-tool/SKILL.md](.agents/skills/new-tool/SKILL.md) — shared workflow for adding a tool
+- [.agents/skills/new-adr/SKILL.md](.agents/skills/new-adr/SKILL.md) — shared workflow for recording a decision
+- [.agents/skills/release-package/SKILL.md](.agents/skills/release-package/SKILL.md) — shared workflow for release prep
+- [.claude/commands/](.claude/commands) — Claude Code slash-command adapters for the shared skills
+- [.agents/tool-description-reviewer.md](.agents/tool-description-reviewer.md) — critique tool descriptions
 
 ## Citation contract
 

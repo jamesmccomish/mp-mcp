@@ -70,13 +70,23 @@ export type TopicTrackerData = {
   }>;
 };
 
-// Each sub-call gets a per-call ceiling longer than the outer deadline so the
-// outer signal always fires first (one attempt, no wasted retry in a fan-out).
+// allSettled returns as soon as all five sources settle, so a generous deadline
+// is free on the common path and only caps the bad case: long enough for a slow
+// source, short enough to drop a hung one (written-questions has hung 20s+).
+// Per-call ceiling sits above the deadline so the outer signal fires first.
 const FAN_OUT_DEADLINE_MS = 9_000;
 const FAN_OUT_PER_CALL_MS = 15_000;
 
+// Internal, non-schema knobs so tests can shrink the fan-out deadline to keep
+// hung-source assertions fast without touching the production values above.
+export type TopicTrackerOptions = {
+  deadlineMs?: number;
+  perCallMs?: number;
+};
+
 export async function topicTracker(
   input: TopicTrackerInput,
+  options: TopicTrackerOptions = {},
 ): Promise<ToolResponse<TopicTrackerData>> {
   const to = new Date();
   const from = new Date(to.getTime() - input.lookback_days * 86_400_000);
@@ -84,9 +94,9 @@ export async function topicTracker(
   const toIso = toIsoDate(to);
 
   const fanOut = new AbortController();
-  const fanOutTimer = setTimeout(() => fanOut.abort(), FAN_OUT_DEADLINE_MS);
+  const fanOutTimer = setTimeout(() => fanOut.abort(), options.deadlineMs ?? FAN_OUT_DEADLINE_MS);
   const signal = fanOut.signal;
-  const timeoutMs = FAN_OUT_PER_CALL_MS;
+  const timeoutMs = options.perCallMs ?? FAN_OUT_PER_CALL_MS;
 
   let billsR: PromiseSettledResult<Awaited<ReturnType<typeof searchBills>>>;
   let debatesR: PromiseSettledResult<Awaited<ReturnType<typeof searchHansardDebates>>>;

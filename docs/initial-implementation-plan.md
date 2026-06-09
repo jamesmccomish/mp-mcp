@@ -2,7 +2,7 @@
 
 A concrete, milestone-driven plan for the first build of `mp-mcp` — a public, npm-publishable MCP server for UK Parliament data. Scoped to the MCP server only; a demo app is stubbed in the monorepo but not implemented here.
 
-Self-contained: this file plus the repo's `CLAUDE.md` is everything Claude Code needs to start at M0.
+Self-contained: this file plus the repo's `.agents/project.md` is everything a coding assistant needs to start at M0.
 
 ---
 
@@ -19,7 +19,7 @@ The build is done when *all* of the following are true:
 4. **Citation contract** is enforced — every tool response includes source URLs; the server's `instructions` field tells consumers to cite them inline.
 5. **Eval set** (20 tasks) is implemented in `evals/` and runs in CI. Baseline accuracy is captured.
 6. **CI green** on every PR: typecheck, lint, unit tests, integration tests (placeholder. skipped for v1. will be against live Parliament APIs, with a fixture-replay fallback).
-7. **Read to be published to npm** as `@<org>/mp-mcp` with a working `claude mcp add` install path documented in the README.
+7. **Read to be published to npm** as `@<org>/mp-mcp` with working Claude Code, Codex, and generic stdio MCP install paths documented in the README.
 8. **MCP registry** submission is filed (acceptance may post-date this build).
 9. **OPL attribution** is surfaced in the server's `instructions` and the README.
 
@@ -27,7 +27,7 @@ The build is done when *all* of the following are true:
 
 ## 1. Tooling stack (locked)
 
-Each choice is opinionated. Claude Code can change any of these during refinement; the rationale is here so the change is informed.
+Each choice is opinionated. Coding assistants can change any of these during refinement; the rationale is here so the change is informed.
 
 | Concern | Choice | Why |
 |---|---|---|
@@ -62,14 +62,27 @@ Each choice is opinionated. Claude Code can change any of these during refinemen
 parliament-app/                          # repo root
 ├── .changeset/
 │   └── config.json
-├── .claude/                             # Claude Code dev tooling — see §2.2
+├── .agents/                             # shared coding-assistant instructions — see §2.2
+│   ├── project.md                       # shared project memory
+│   ├── tool-description-reviewer.md     # shared read-only critique instructions
+│   └── skills/
+│       ├── new-tool/SKILL.md            # shared workflow for adding tools
+│       ├── new-adr/SKILL.md             # shared workflow for recording decisions
+│       └── release-package/SKILL.md     # shared workflow for release prep
+├── .claude/                             # Claude Code wrappers/settings — see §2.2
 │   ├── settings.json                    # permissions allow-list + local MCP registration
 │   ├── README.md                        # what's in this folder and why
 │   ├── commands/
 │   │   ├── new-tool.md                  # /new-tool <name>
-│   │   └── new-adr.md                   # /new-adr <slug>
+│   │   ├── new-adr.md                   # /new-adr <slug>
+│   │   └── release-package.md           # /release-package [bump] [summary]
 │   └── agents/
-│       └── tool-description-reviewer.md # read-only critique sub-agent
+│       └── tool-description-reviewer.md # thin wrapper around .agents reviewer
+├── .codex/                              # Codex wrappers/settings — see §2.2
+│   ├── config.toml                      # local + published MCP server entries
+│   ├── README.md
+│   └── agents/
+│       └── tool-description-reviewer.toml # thin wrapper around .agents reviewer
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml                       # typecheck, lint, test on PR + main
@@ -149,7 +162,7 @@ parliament-app/                          # repo root
 │   │   ├── package.json
 │   │   ├── tsconfig.json
 │   │   ├── biome.json                   # extends root
-│   │   ├── README.md                    # install + usage; copy-paste claude mcp add
+│   │   ├── README.md                    # install + usage; Claude Code, Codex, and generic stdio examples
 │   │   └── CHANGELOG.md                 # changesets-managed
 │   └── (libraries shared between mp-mcp and apps go here as they emerge)
 ├── .gitignore
@@ -163,8 +176,9 @@ parliament-app/                          # repo root
 ├── README.md                            # repo-level overview, links to packages
 ├── CONTRIBUTING.md
 ├── CODE_OF_CONDUCT.md
-├── llms.txt                             # for Claude Code: pointers to CLAUDE.md, brainstorm, mcp-design
-└── CLAUDE.md                            # thin in-repo memory file; see §2.2
+├── llms.txt                             # pointers for coding assistants
+├── AGENTS.md                            # Codex entry point; points at .agents/project.md
+└── CLAUDE.md                            # Claude Code entry point; points at .agents/project.md
 
 # Note: brainstorm.md and mcp-design.md (research docs) live in Cowork, NOT in this repo.
 # See §2.1 for how research is referenced from the code (Architecture Decision Records).
@@ -181,21 +195,43 @@ parliament-app/                          # repo root
 
 The `docs/adrs/` folder is created empty during M0. ADRs are added *as decisions are locked* during the build — not predefined. The convention is append-only: when a decision changes, write a new ADR that supersedes the old one rather than editing the original. Code comments can then point at an ADR by number when explaining a non-obvious choice.
 
-Use the `/new-adr <slug>` slash command (defined in `.claude/commands/new-adr.md`) to scaffold a new ADR — it handles numbering and template.
+Use the shared `new-adr` workflow to scaffold a new ADR — it handles numbering and template. Codex can invoke `$new-adr`; Claude Code exposes the same workflow through `/new-adr`.
 
-### 2.2 `.claude/` — project tooling for Claude Code
+### 2.2 Coding-assistant project tooling
 
-Configures Claude Code itself when working in this repo. Everything here is opt-in and project-specific.
+Shared instructions live in `.agents/`. Assistant-specific directories contain only wrappers and client configuration, so prompts do not drift between Claude Code and Codex.
+
+#### `.agents/` — shared instructions
+
+- **`project.md`** — project memory: mission, milestone, conventions, stack, repo shape, maintenance protocol. `AGENTS.md` and `CLAUDE.md` point here.
+
+- **`tool-description-reviewer.md`** — shared read-only critique instructions for MCP tool descriptions.
+
+- **`skills/new-tool/SKILL.md`** — shared workflow for adding an MCP tool. Codex can invoke it as `$new-tool`; Claude Code exposes the same workflow through `/new-tool`.
+
+- **`skills/new-adr/SKILL.md`** — shared workflow for appending a numbered ADR. Codex can invoke it as `$new-adr`; Claude Code exposes the same workflow through `/new-adr`.
+
+- **`skills/release-package/SKILL.md`** — shared workflow for adding a changeset and verifying package release readiness. Codex can invoke it as `$release-package`; Claude Code exposes the same workflow through `/release-package`.
+
+#### `.claude/` — Claude Code wrappers/settings
 
 - **`settings.json`** — permissions allow-list for routine `pnpm`/`git` commands so Claude doesn't prompt on every action. Also registers the locally-built `mp-mcp` as an MCP server in Claude Code itself (`mcpServers.mp-mcp-local`), so once you've run `pnpm build` you can immediately test the MCP against Claude Code in this same session.
 
-- **`commands/new-tool.md`** — `/new-tool <camelCaseName>` scaffolds a new MCP tool: Zod input schema, citation contract, `response_format` toggle, registration in the index, snapshot test. Encodes the project's tool-design contract so it doesn't drift across the ~10 tools.
+- **`commands/new-tool.md`** — thin Claude Code wrapper around `.agents/skills/new-tool/SKILL.md`.
 
-- **`commands/new-adr.md`** — `/new-adr <kebab-slug>` finds the next ADR number and creates the file from the template. Enforces the append-only convention.
+- **`commands/new-adr.md`** — thin Claude Code wrapper around `.agents/skills/new-adr/SKILL.md`.
 
-- **`agents/tool-description-reviewer.md`** — a read-only sub-agent that critiques MCP tool descriptions against Anthropic's effective-tools principles and this project's citation contract. Spawn it during M7 (eval + tuning) when iterating on descriptions, or any time the eval set surfaces a tool being mis-selected. Read-only by design: it returns a critique, the main agent makes the edits.
+- **`commands/release-package.md`** — thin Claude Code wrapper around `.agents/skills/release-package/SKILL.md`.
 
-**What's deliberately not there:** Claude Code hooks (pre-commit checks belong in `lefthook`/`husky` so they fire on `git commit`, not on every edit); a `/new-client` or `/new-prompt` command (bounded sets, no ongoing utility); a `parliament-api` skill (would duplicate this plan and invite drift); a default-model pin (user-level concern).
+- **`agents/tool-description-reviewer.md`** — thin Claude Code wrapper that points at `.agents/tool-description-reviewer.md`.
+
+#### `.codex/` — Codex wrappers/settings
+
+- **`config.toml`** — MCP server entries for the published package (`mp-mcp`) and local build (`mp-mcp-local`).
+
+- **`agents/tool-description-reviewer.toml`** — thin Codex wrapper that points at `.agents/tool-description-reviewer.md`.
+
+**What's deliberately not there:** assistant-specific hooks for pre-commit checks (typecheck, lint, knip belong in `lefthook`/`husky` so they fire on `git commit`, not on every edit); a `/new-client` or `/new-prompt` command (bounded sets, no ongoing utility); a `parliament-api` skill (would duplicate this plan and invite drift); a default-model pin (user-level concern).
 
 ---
 
@@ -215,13 +251,13 @@ Repo exists, tooling boots, "hello world" MCP server runs.
 - [ ] `mp-mcp` exposes a single `parliament_ping` tool that returns `{ ok: true, sources: [] }`. Validates the SDK wiring end-to-end.
 - [ ] GitHub Actions: `ci.yml` runs `pnpm install`, typecheck, lint, test on PRs + main. Matrix: Node 22 and Bun 1.x.
 - [ ] Root `README.md` skeleton, `LICENSE` (MIT), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `llms.txt`.
-- [ ] Repo-root `CLAUDE.md` in place (provided separately).
+- [ ] Repo-root `.agents/project.md`, `AGENTS.md`, and `CLAUDE.md` in place.
 - [ ] `docs/implementation-plan.md` at repo root.
 - [ ] `docs/adrs/` exists as an empty directory (with a `.gitkeep`) ready for ADRs as decisions are locked.
-- [ ] `.claude/` scaffold in place per §2.2 (settings.json, README.md, commands/, agents/). Provided separately.
+- [ ] `.agents/`, `.claude/`, and `.codex/` scaffolds in place per §2.2.
 - [ ] Demo app stub: `apps/[demo-app-name]/` with `package.json` and a README that says "planned".
 
-**Done when:** `claude mcp add mp-mcp ./packages/mp-mcp/dist/stdio.js` works, calling `parliament_ping` returns the canned response.
+**Done when:** Claude Code and Codex local MCP config can run `./packages/mp-mcp/dist/stdio.js`, and calling `parliament_ping` returns the canned response.
 
 ### M1 — Foundations (day 2–3)
 
@@ -313,12 +349,12 @@ The 20-task seed eval. See §6 for the actual tasks.
 
 The release.
 
-- [ ] Full `packages/mp-mcp/README.md`: install (`claude mcp add` and direct npm), usage examples per tool, citation contract explainer, OPL attribution, limitations, and a "Prior art" section that acknowledges the two existing Parliament MCPs and how this one differs: `i-dot-ai/parliament-mcp` (analyst-grade, Python + Qdrant semantic search, hosted-only) and `kupad95/uk-parliament-mcp-server` (cross-dataset analysis, generic entity-typed tools). Frame mp-mcp's distinction as constituent-friendly, zero-infra, npm-installable, citation-disciplined, with intent-led tool design — not "more data than the others".
+- [ ] Full `packages/mp-mcp/README.md`: install (Claude Code, Codex, and direct npm), usage examples per tool, citation contract explainer, OPL attribution, limitations, and a "Prior art" section that acknowledges the two existing Parliament MCPs and how this one differs: `i-dot-ai/parliament-mcp` (analyst-grade, Python + Qdrant semantic search, hosted-only) and `kupad95/uk-parliament-mcp-server` (cross-dataset analysis, generic entity-typed tools). Frame mp-mcp's distinction as constituent-friendly, zero-infra, npm-installable, citation-disciplined, with intent-led tool design — not "more data than the others".
 - [ ] Root `README.md`: the monorepo overview, link to each package, link to the brainstorm + design + plan docs.
 - [ ] Changesets configured for `mp-mcp` only (westminster-watch is private until built).
 - [ ] First changeset created; PR to main triggers `release.yml`; package published as `@<scope>/mp-mcp@0.1.0`.
 - [ ] MCP registry submission filed.
-- [ ] `claude mcp add` smoke test from a fresh machine documented.
+- [ ] Claude Code and Codex smoke tests from a fresh machine documented.
 
 **Done when:** a developer who has never seen the repo can `pnpm dlx @<scope>/mp-mcp` (or equivalent) and have it work in Claude Desktop in under 5 minutes.
 
@@ -476,7 +512,7 @@ These test that the agent doesn't over-call tools.
 
 - [ ] `package.json` has: `name`, `version`, `description`, `keywords` (incl. `mcp`, `parliament`, `civic-tech`), `repository`, `license`, `bugs`, `homepage`, `bin`, `exports`, `files`, `engines` (`node >= 22`).
 - [ ] `dist/` cleanly builds and runs from a fresh `pnpm install`.
-- [ ] README has a "Quickstart" with the literal `claude mcp add` command.
+- [ ] README has a "Quickstart" with Claude Code, Codex, and generic stdio MCP examples.
 - [ ] README has a "Tools" section auto-generated from the registered tool list (build script reads the registry, writes a markdown table).
 - [ ] CHANGELOG.md generated by changesets.
 - [ ] License notice in every published file is unnecessary (the LICENSE file is enough), but the README's first line attributes Parliament data under OPL.
@@ -511,19 +547,19 @@ So nobody accidentally builds these:
 - SQLite-backed caching (v2)
 - APPGs tool (deferred)
 - Historic members (pre-2010) — `Members/SearchHistorical` exists but isn't exposed
-- TheyWorkForYou integration (deliberately avoided; see CLAUDE.md)
+- TheyWorkForYou integration (deliberately avoided; see `.agents/project.md`)
 - A "potential conflicts" tool that joins `Voting` with `RegisteredInterests`. Discussed and explicitly rejected: characterising overlap as a conflict is a legal and reputational hazard the MCP shouldn't take on. `parliament_member_interests` exposes the data and its description steers the agent away from the conflict framing; downstream callers can draw their own conclusions.
 
 ---
 
-## 10. Reading order for Claude Code
+## 10. Reading order for coding assistants
 
 All references below are in-repo. The Cowork research docs are deliberately not in this repo (see §0.1).
 
-1. Read `CLAUDE.md` at the repo root for current milestone, locked conventions, and entry points.
+1. Read `.agents/project.md` at the repo root for current milestone, locked conventions, and entry points.
 2. Read this file (`docs/implementation-plan.md`) — §0 (Definition of Done), §1 (tooling), §2 (layout), §4 (cross-cutting), then the milestone you're on.
 3. When a decision needs justifying, read the relevant ADR under `docs/adrs/`.
 4. After completing a milestone:
-   - Update `CLAUDE.md` "Current milestone" line.
+   - Update `.agents/project.md` "Current milestone" line.
    - Add a changeset describing the user-visible change.
    - Open a PR; rely on the CI matrix (Node 22 + Bun) to gate merge.
